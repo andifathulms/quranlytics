@@ -25,8 +25,12 @@ cp .env.example .env
 docker compose up --build
 ```
 
-- Backend API → http://localhost:8000/api/v1/
-- Frontend    → http://localhost:3000/
+Host ports are remapped off the defaults to avoid colliding with other local
+stacks (containers still use standard ports internally):
+
+- Frontend    → http://localhost:3010/
+- Backend API → http://localhost:8010/api/v1/
+- Postgres    → localhost:5440 · Redis → localhost:6380
 
 ## Data ingestion
 
@@ -50,6 +54,16 @@ frontend/   Next.js 14 reader + analytics UI
 ```
 
 See [CLAUDE.md](CLAUDE.md) and [PRD.md](PRD.md) for full specification.
+
+## Data sources & morphology
+
+`ingest_words` pulls surface forms + translations from the quran.com API. That
+endpoint does **not** expose lemma/root morphology, so the word's `lemma` falls
+back to a normalized (tashkeel-stripped, alef/hamza-unified) surface form — the
+same normalization applied to search input, so frequency, rare-word, and
+numeric-claim tools work at the surface-word level. Wiring in true trilateral
+roots from the **Quranic Arabic Corpus** is the tracked follow-up that will make
+the Root Explorer and morphology-aware counts fully accurate.
 
 ## Arabic text integrity
 
