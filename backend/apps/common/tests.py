@@ -1,7 +1,11 @@
 """Tests for the Arabic text utilities and response envelope."""
 from __future__ import annotations
 
-from apps.common.arabic import normalize_search, strip_tashkeel
+from apps.common.arabic import (
+    normalize_search,
+    strip_tashkeel,
+    transliterate_root,
+)
 
 
 class TestStripTashkeel:
@@ -30,3 +34,12 @@ class TestNormalizeSearch:
 
     def test_taa_marbuta_to_haa(self):
         assert normalize_search("رحمة") == "رحمه"
+
+
+class TestTransliterateRoot:
+    def test_trilateral_root_hyphenated(self):
+        assert transliterate_root("كتب") == "k-t-b"
+
+    def test_handles_emphatic_and_special_letters(self):
+        assert transliterate_root("رحم") == "r-ḥ-m"
+        assert transliterate_root("صبر") == "ṣ-b-r"
