@@ -42,6 +42,7 @@ python manage.py ingest_verses
 python manage.py ingest_translations --language=en --translator_id=131
 python manage.py ingest_translations --language=id --translator_id=33
 python manage.py ingest_words
+python manage.py ingest_morphology   # roots + lemmas (Quranic Arabic Corpus)
 python manage.py compute_stats
 python manage.py build_frequency_cache
 ```
@@ -57,13 +58,16 @@ See [CLAUDE.md](CLAUDE.md) and [PRD.md](PRD.md) for full specification.
 
 ## Data sources & morphology
 
-`ingest_words` pulls surface forms + translations from the quran.com API. That
-endpoint does **not** expose lemma/root morphology, so the word's `lemma` falls
-back to a normalized (tashkeel-stripped, alef/hamza-unified) surface form — the
-same normalization applied to search input, so frequency, rare-word, and
-numeric-claim tools work at the surface-word level. Wiring in true trilateral
-roots from the **Quranic Arabic Corpus** is the tracked follow-up that will make
-the Root Explorer and morphology-aware counts fully accurate.
+`ingest_words` pulls surface forms + translations from the quran.com API, which
+does **not** expose lemma/root morphology. `ingest_morphology` then layers in the
+**Quranic Arabic Corpus** morphology (roots + dictionary lemmas, already in
+Arabic script), keyed by `surah:verse:word`. Word positions align 1:1 between
+the two sources, so every word is matched; ~50k of the 77k words carry a
+trilateral root (the rest are particles/proper nouns), across ~1,650 distinct
+roots. Lemmas and roots are stored under the same `normalize_search` key used
+for query input, so the Root Explorer, root-scoped frequency, and rare-word
+tools resolve user input directly. If `ingest_morphology` is skipped, `lemma`
+falls back to the normalized surface form so the surface-level tools still work.
 
 ## Arabic text integrity
 
