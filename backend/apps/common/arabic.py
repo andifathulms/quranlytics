@@ -40,3 +40,20 @@ def strip_tashkeel(text: str) -> str:
 def normalize_search(text: str) -> str:
     """Normalise user search input: strip tashkeel + unify hamza/alef forms."""
     return strip_tashkeel(text).translate(_HAMZA_TABLE).strip()
+
+
+# Per-letter phonetic transliteration for trilateral roots (e.g. كتب -> k-t-b).
+# Used only to label roots in the UI; never applied to displayed Quranic text.
+_ROOT_TRANSLIT = {
+    "ء": "ʾ", "ا": "a", "أ": "ʾ", "إ": "ʾ", "آ": "ʾ", "ب": "b", "ت": "t",
+    "ث": "th", "ج": "j", "ح": "ḥ", "خ": "kh", "د": "d", "ذ": "dh", "ر": "r",
+    "ز": "z", "س": "s", "ش": "sh", "ص": "ṣ", "ض": "ḍ", "ط": "ṭ", "ظ": "ẓ",
+    "ع": "ʿ", "غ": "gh", "ف": "f", "ق": "q", "ك": "k", "ل": "l", "م": "m",
+    "ن": "n", "ه": "h", "و": "w", "ي": "y", "ى": "ā",
+}
+
+
+def transliterate_root(root_arabic: str) -> str:
+    """Hyphen-joined phonetic transliteration of a root (كتب -> 'k-t-b')."""
+    letters = [_ROOT_TRANSLIT.get(ch, ch) for ch in root_arabic if not ch.isspace()]
+    return "-".join(letters)

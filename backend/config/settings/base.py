@@ -155,3 +155,10 @@ QURAN_API_KEY = os.environ.get("QURAN_API_KEY", "")
 TRANSLATION_IDS = {"en": 131, "id": 33}  # Sahih International, Kemenag RI
 TAFSIR_IDS = {"en": 169, "id": 164}
 INGEST_RATE_LIMIT_SECONDS = 1.0  # 1 request/second
+
+# Quranic Arabic Corpus morphology (roots + lemmas in Arabic script).
+# Tab-separated: location<TAB>form<TAB>tag<TAB>features, location = s:v:w:seg.
+QURAN_MORPHOLOGY_URL = os.environ.get(
+    "QURAN_MORPHOLOGY_URL",
+    "https://raw.githubusercontent.com/mustafa0x/quran-morphology/master/quran-morphology.txt",
+)
