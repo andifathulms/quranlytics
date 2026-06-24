@@ -1,9 +1,11 @@
 // Thin fetch wrapper that unwraps the {data, meta, errors} envelope.
 import type {
+  Cooccurrence,
   Envelope,
   NumericClaim,
   RootTree,
   Surah,
+  SurahStatRow,
   Verse,
   WordFrequency,
 } from "./types";
@@ -73,8 +75,16 @@ export const api = {
   rootTree: (root: string) =>
     request<RootTree>(`/analytics/root-tree/?root=${encodeURIComponent(root)}`),
 
+  cooccurrence: (word1: string, word2: string) =>
+    request<Cooccurrence>(
+      `/analytics/co-occurrence/?word1=${encodeURIComponent(word1)}&word2=${encodeURIComponent(word2)}`,
+    ),
+
   surahStats: (surahId: number) =>
     request<Record<string, unknown>>(`/analytics/surah-stats/${surahId}/`),
+
+  allSurahStats: () =>
+    request<{ surahs: SurahStatRow[] }>(`/analytics/surah-stats/`),
 
   verifyClaim: (word: string, expected: number) =>
     request<NumericClaim>(

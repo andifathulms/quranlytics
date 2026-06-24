@@ -14,6 +14,8 @@ const NAV = [
   { href: "/", label: "Reader" },
   { href: "/analyze/word", label: "Word Frequency" },
   { href: "/analyze/root", label: "Root Explorer" },
+  { href: "/analyze/cooccurrence", label: "Co-occurrence" },
+  { href: "/analyze/stats", label: "Statistics" },
   { href: "/explore", label: "Explore" },
 ];
 
