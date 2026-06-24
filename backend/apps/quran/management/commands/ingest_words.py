@@ -2,6 +2,14 @@
 
 Word positions are normalised to 1-indexed. Hamza/alef forms in roots are
 normalised on ingestion (see apps.common.arabic).
+
+Note on data sources: the quran.com verses endpoint provides the surface form
+and translation but NOT lemma/root. True morphology comes from the Quranic
+Arabic Corpus (a separate dataset — see PRD). Until that is wired in, when the
+API supplies no lemma we fall back to the tashkeel-stripped surface form so
+that frequency, rare-word, and numeric-claim analytics work at the
+surface-word level. The clean form is what user search input is matched
+against (search input is likewise tashkeel-stripped).
 """
 from __future__ import annotations
 
@@ -74,7 +82,10 @@ class Command(BaseCommand):
             arabic = w.get("text_uthmani") or w.get("text") or ""
             translation = (w.get("translation") or {}).get("text", "")
             transliteration = (w.get("transliteration") or {}).get("text", "")
-            lemma = w.get("lemma") or ""
+            # Prefer a real lemma; otherwise fall back to the normalized surface
+            # form (same normalization as search input) so analytics have a
+            # searchable key to group on.
+            lemma = w.get("lemma") or normalize_search(arabic)
             Word.objects.update_or_create(
                 verse=verse,
                 position=position,
