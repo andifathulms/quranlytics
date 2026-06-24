@@ -7,6 +7,7 @@ urlpatterns = [
     path("word-frequency/", views.word_frequency_view, name="word-frequency"),
     path("root-tree/", views.root_tree_view, name="root-tree"),
     path("co-occurrence/", views.cooccurrence_view, name="co-occurrence"),
+    path("surah-stats/", views.surah_stats_list_view, name="surah-stats-all"),
     path(
         "surah-stats/<int:surah_id>/",
         views.surah_stats_view,

@@ -167,6 +167,24 @@ def get_surah_stats(surah_id: int) -> dict[str, Any]:
     }
 
 
+def get_all_surah_stats() -> list[dict[str, Any]]:
+    """All 114 surahs' precomputed stats — for the statistics dashboard."""
+    rows = SurahStats.objects.select_related("surah").order_by("surah__number")
+    return [
+        {
+            "surah_id": s.surah.number,
+            "surah_name": s.surah.name_transliteration,
+            "revelation_type": s.surah.revelation_type,
+            "verse_count": s.verse_count,
+            "word_count": s.word_count,
+            "letter_count": s.letter_count,
+            "unique_word_count": s.unique_word_count,
+            "unique_root_count": s.unique_root_count,
+        }
+        for s in rows
+    ]
+
+
 def find_rare_words(max_count: int = 1) -> list[dict[str, Any]]:
     """Words (lemmas) appearing <= max_count times in the entire Quran."""
     rows = (

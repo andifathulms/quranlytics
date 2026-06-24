@@ -59,6 +59,22 @@ class TestServices:
         assert tree["root"] == "أله"  # display
         assert tree["root_key"] == "اله"  # lookup key
 
+    def test_all_surah_stats(self, computed, surah):
+        from apps.analytics.services import get_all_surah_stats
+
+        rows = get_all_surah_stats()
+        assert len(rows) == 1
+        assert rows[0]["surah_id"] == 1
+        assert rows[0]["word_count"] == 4
+
+    def test_cooccurrence_shared_verse(self, computed):
+        from apps.analytics.services import get_cooccurrence
+
+        # حمد and رب both appear in the fixture verse 1:2.
+        result = get_cooccurrence("حمد", "رب")
+        assert result["count"] == 1
+        assert result["verses"][0]["verse_key"] == "1:2"
+
     def test_verify_numeric_claim(self, computed):
         from apps.analytics.services import verify_numeric_claim
 
