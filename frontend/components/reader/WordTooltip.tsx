@@ -46,7 +46,9 @@ export function WordTooltip({
         {word.root && (
           <div className="flex items-center gap-1">
             <span className="font-semibold">Root:</span>
-            <ArabicText className="text-base">{word.root.root_arabic}</ArabicText>
+            <ArabicText className="text-base">
+              {word.root.root_display || word.root.root_arabic}
+            </ArabicText>
             <span>({word.root.root_transliteration})</span>
           </div>
         )}
