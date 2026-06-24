@@ -50,8 +50,13 @@ def get_word_frequency(word: str | None = None, root: str | None = None) -> dict
         )
         label = root_norm
     else:
-        freq = WordFrequency.objects.filter(root__isnull=True, lemma=word).first()
-        label = word
+        # Word frequency keys are normalized (see ingest_words); normalize the
+        # query the same way so user input matches.
+        word_norm = normalize_search(word)
+        freq = WordFrequency.objects.filter(
+            root__isnull=True, lemma=word_norm
+        ).first()
+        label = word_norm
 
     if freq is None:
         return {"query": label, "total": 0, "per_surah": []}
@@ -119,9 +124,9 @@ def get_cooccurrence(word1: str, word2: str) -> dict[str, Any]:
     w1, w2 = normalize_search(word1), normalize_search(word2)
     verses = (
         Verse.objects.filter(
-            Q(words__lemma=word1) | Q(words__arabic__icontains=w1)
+            Q(words__lemma=w1) | Q(words__arabic__icontains=word1)
         )
-        .filter(Q(words__lemma=word2) | Q(words__arabic__icontains=w2))
+        .filter(Q(words__lemma=w2) | Q(words__arabic__icontains=word2))
         .select_related("surah")
         .prefetch_related("translations")
         .distinct()
@@ -196,7 +201,7 @@ def verify_numeric_claim(word: str, expected_count: int) -> dict[str, Any]:
     needle = normalize_search(word)
     matches = (
         Word.objects.filter(
-            Q(lemma=word) | Q(arabic__icontains=needle)
+            Q(lemma=needle) | Q(arabic__icontains=word)
         )
         .select_related("verse__surah")
         .order_by("verse__surah__number", "verse__number")

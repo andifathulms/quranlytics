@@ -8,7 +8,7 @@ from __future__ import annotations
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from apps.common.arabic import strip_tashkeel
+from apps.common.arabic import normalize_search
 from apps.quran.models import Surah, Verse
 
 from ._client import QuranAPIClient
@@ -61,7 +61,10 @@ class Command(BaseCommand):
                 number=verse["verse_number"],
                 defaults={
                     "text_uthmani": text_uthmani,
-                    "text_clean": strip_tashkeel(text_uthmani),
+                    # Search key: tashkeel stripped + alef/hamza/taa forms
+                    # unified, matching how query input is normalized so search
+                    # actually hits. Never displayed to users.
+                    "text_clean": normalize_search(text_uthmani),
                     "juz_number": verse.get("juz_number", 0),
                     "page_number": verse.get("page_number", 0),
                     # Global revelation order is approximated by chapter order;
