@@ -6,6 +6,16 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 
+@pytest.fixture(autouse=True)
+def _clear_cache():
+    """Isolate Redis-backed cache between tests (cache survives DB rollback)."""
+    from django.core.cache import cache
+
+    cache.clear()
+    yield
+    cache.clear()
+
+
 @pytest.fixture
 def api() -> APIClient:
     return APIClient()

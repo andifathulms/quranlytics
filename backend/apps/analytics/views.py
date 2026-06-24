@@ -85,6 +85,13 @@ def surah_stats_view(request, surah_id: int):
 
 
 @api_view(["GET"])
+def surah_stats_list_view(request):
+    return _cached(
+        "surah-stats-all", {}, lambda: {"surahs": services.get_all_surah_stats()}
+    )
+
+
+@api_view(["GET"])
 def rare_words_view(request):
     try:
         threshold = int(request.query_params.get("threshold", 1))
