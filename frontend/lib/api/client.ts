@@ -8,8 +8,12 @@ import type {
   WordFrequency,
 } from "./types";
 
+// Server-side fetches run inside the container and reach the backend over the
+// compose network (API_BASE_INTERNAL); browser fetches use the host-mapped URL.
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000/api/v1";
+  (typeof window === "undefined"
+    ? process.env.API_BASE_INTERNAL || process.env.NEXT_PUBLIC_API_BASE
+    : process.env.NEXT_PUBLIC_API_BASE) || "http://localhost:8010/api/v1";
 
 export class ApiError extends Error {
   constructor(message: string, readonly status: number) {
