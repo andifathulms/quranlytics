@@ -29,10 +29,13 @@ class TranslationSerializer(serializers.ModelSerializer):
 
 
 class WordRootSerializer(serializers.ModelSerializer):
+    root_display = serializers.CharField(source="display", read_only=True)
+
     class Meta:
         model = WordRoot
         fields = (
             "root_arabic",
+            "root_display",
             "root_transliteration",
             "meaning_en",
             "meaning_id",

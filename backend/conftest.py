@@ -33,6 +33,7 @@ def root(db):
 
     return WordRoot.objects.create(
         root_arabic="كتب",
+        root_display="كتب",
         root_transliteration="k-t-b",
         meaning_en="to write",
     )

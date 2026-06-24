@@ -75,7 +75,10 @@ class Translation(models.Model):
 
 
 class WordRoot(models.Model):
+    # Normalized lookup key (hamza/alef forms unified) — what queries match on.
     root_arabic = models.CharField(max_length=20, unique=True)
+    # Raw root in proper orthography (hamza preserved) — for display only.
+    root_display = models.CharField(max_length=20, blank=True)
     root_transliteration = models.CharField(max_length=50)
     meaning_en = models.CharField(max_length=200, blank=True)
     meaning_id = models.CharField(max_length=200, blank=True)
@@ -83,8 +86,12 @@ class WordRoot(models.Model):
     class Meta:
         ordering = ["root_arabic"]
 
+    @property
+    def display(self) -> str:
+        return self.root_display or self.root_arabic
+
     def __str__(self) -> str:
-        return f"{self.root_arabic} ({self.root_transliteration})"
+        return f"{self.display} ({self.root_transliteration})"
 
 
 class Word(models.Model):

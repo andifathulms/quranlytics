@@ -17,7 +17,7 @@ replacing the surface-form lemma fallback used by ``ingest_words``.
 """
 from __future__ import annotations
 
-from collections import defaultdict
+from collections import Counter, defaultdict
 
 import requests
 from django.conf import settings
@@ -153,33 +153,61 @@ class Command(BaseCommand):
     def _ensure_roots(
         self, morphology: dict[tuple[int, int, int], dict]
     ) -> dict[str, int]:
-        """Create any missing WordRoot rows; return {normalized_root: id}."""
-        wanted: dict[str, str] = {}  # normalized -> a raw form (for translit)
+        """Create/refresh WordRoot rows; return {normalized_root: id}.
+
+        ``root_arabic`` is the normalized lookup key; ``root_display`` keeps the
+        most common raw orthography (hamza preserved) for the UI.
+        """
+        raw_counts: dict[str, Counter] = defaultdict(Counter)
         for rec in morphology.values():
             raw = rec["root"]
             if not raw:
                 continue
             norm = normalize_search(raw)
             if norm:
-                wanted.setdefault(norm, raw)
+                raw_counts[norm][raw] += 1
 
-        existing = dict(
-            WordRoot.objects.filter(root_arabic__in=wanted).values_list(
-                "root_arabic", "id"
+        # Most common raw form per normalized key.
+        display = {
+            norm: counts.most_common(1)[0][0] for norm, counts in raw_counts.items()
+        }
+
+        existing = set(
+            WordRoot.objects.filter(root_arabic__in=display).values_list(
+                "root_arabic", flat=True
             )
         )
-        to_create = [
-            WordRoot(
-                root_arabic=norm,
-                root_transliteration=transliterate_root(raw),
+        WordRoot.objects.bulk_create(
+            [
+                WordRoot(
+                    root_arabic=norm,
+                    root_display=raw,
+                    root_transliteration=transliterate_root(raw),
+                )
+                for norm, raw in display.items()
+                if norm not in existing
+            ],
+            batch_size=1000,
+        )
+        # Refresh display/translit for roots that already existed (idempotent).
+        if existing:
+            refresh = [
+                WordRoot(
+                    pk=pk,
+                    root_arabic=norm,
+                    root_display=display[norm],
+                    root_transliteration=transliterate_root(display[norm]),
+                )
+                for norm, pk in WordRoot.objects.filter(
+                    root_arabic__in=existing
+                ).values_list("root_arabic", "id")
+            ]
+            WordRoot.objects.bulk_update(
+                refresh, ["root_display", "root_transliteration"], batch_size=1000
             )
-            for norm, raw in wanted.items()
-            if norm not in existing
-        ]
-        if to_create:
-            WordRoot.objects.bulk_create(to_create, batch_size=1000)
+
         return dict(
-            WordRoot.objects.filter(root_arabic__in=wanted).values_list(
+            WordRoot.objects.filter(root_arabic__in=display).values_list(
                 "root_arabic", "id"
             )
         )
