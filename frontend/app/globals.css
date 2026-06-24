@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #f5f0e8;
+  --foreground: #0d1b2a;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0d1b2a;
+    --foreground: #f5f0e8;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/* Arabic / Quranic text rendering — never override direction inline. */
+.font-quran {
+  font-feature-settings: "calt" 1, "liga" 1;
+  line-height: 2.4;
+}
+
+@layer utilities {
+  .text-shadow-gold {
+    text-shadow: 0 0 12px rgba(201, 168, 76, 0.35);
+  }
+}
