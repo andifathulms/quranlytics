@@ -47,6 +47,18 @@ class TestServices:
         assert len(tree["derivatives"]) == 1
         assert tree["derivatives"][0]["total_count"] == 1
 
+    def test_root_tree_returns_display_orthography(self, db):
+        # Normalized key (اله) resolves but display preserves hamza (أله).
+        from apps.analytics.services import get_root_tree
+        from apps.quran.models import WordRoot
+
+        WordRoot.objects.create(
+            root_arabic="اله", root_display="أله", root_transliteration="ʾ-l-h"
+        )
+        tree = get_root_tree("أله")  # query in raw form, normalized internally
+        assert tree["root"] == "أله"  # display
+        assert tree["root_key"] == "اله"  # lookup key
+
     def test_verify_numeric_claim(self, computed):
         from apps.analytics.services import verify_numeric_claim
 

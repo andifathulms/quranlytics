@@ -107,7 +107,8 @@ def get_root_tree(root_arabic: str) -> dict[str, Any]:
             entry["sample_verses"].append(w.verse.key)
 
     return {
-        "root": root_obj.root_arabic,
+        "root": root_obj.display,  # proper orthography for display
+        "root_key": root_obj.root_arabic,  # normalized lookup key
         "root_transliteration": root_obj.root_transliteration,
         "meaning": root_obj.meaning_en,
         "derivatives": [
