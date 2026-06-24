@@ -40,7 +40,8 @@ export interface Translation {
 }
 
 export interface WordRoot {
-  root_arabic: string;
+  root_arabic: string; // normalized lookup key
+  root_display: string; // proper orthography (hamza preserved)
   root_transliteration: string;
   meaning_en: string;
   meaning_id: string;
@@ -86,7 +87,8 @@ export interface NumericClaim {
 }
 
 export interface RootTree {
-  root: string;
+  root: string; // display form (proper orthography)
+  root_key?: string; // normalized lookup key
   root_transliteration?: string;
   meaning: string;
   derivatives: {
