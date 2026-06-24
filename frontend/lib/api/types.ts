@@ -86,6 +86,24 @@ export interface NumericClaim {
   verses: string[];
 }
 
+export interface Cooccurrence {
+  word1: string;
+  word2: string;
+  count: number;
+  verses: Verse[];
+}
+
+export interface SurahStatRow {
+  surah_id: number;
+  surah_name: string;
+  revelation_type: "Meccan" | "Medinan";
+  verse_count: number;
+  word_count: number;
+  letter_count: number;
+  unique_word_count: number;
+  unique_root_count: number;
+}
+
 export interface RootTree {
   root: string; // display form (proper orthography)
   root_key?: string; // normalized lookup key
