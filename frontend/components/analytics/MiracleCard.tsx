@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { ShareDiscoveryButton } from "@/components/community/ShareDiscoveryButton";
 import { ArabicText } from "@/components/ui/ArabicText";
 import { Badge, Card } from "@/components/ui/Card";
 import { api, ApiError } from "@/lib/api/client";
@@ -69,6 +70,19 @@ export function MiracleCard({ fact }: { fact: MiracleFact }) {
                 e.g. {result.verses.slice(0, 8).join(" · ")}
               </div>
             )}
+            <div className="mt-3">
+              <ShareDiscoveryButton
+                title={`${fact.word}: claimed ${result.claimed}, actual ${result.actual}`}
+                body={`Verifying the claim "${fact.title}" against live data: claimed ${result.claimed}, actual count ${result.actual} — ${result.verified ? "matches" : "differs"}.`}
+                category="Numerical"
+                payload={{
+                  word: fact.word,
+                  claimed: result.claimed,
+                  actual: result.actual,
+                  verified: result.verified,
+                }}
+              />
+            </div>
           </div>
         ) : (
           <button

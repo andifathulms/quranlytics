@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { ShareDiscoveryButton } from "@/components/community/ShareDiscoveryButton";
 import { ArabicText } from "@/components/ui/ArabicText";
 import { Badge } from "@/components/ui/Card";
 import { api, ApiError } from "@/lib/api/client";
@@ -67,10 +68,18 @@ export function WordSearch({ initialWord = "" }: { initialWord?: string }) {
 
       {result && (
         <div className="space-y-4">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <ArabicText className="text-3xl">{result.query}</ArabicText>
             <Badge tone="emerald">{result.total} occurrences</Badge>
             <Badge tone="blue">{result.per_surah.length} surahs</Badge>
+            {result.total > 0 && (
+              <ShareDiscoveryButton
+                title={`The word ${result.query} appears ${result.total} times`}
+                body={`Searching the Quran, the word "${result.query}" occurs ${result.total} times across ${result.per_surah.length} surahs.`}
+                category="Linguistic"
+                payload={{ word: result.query, total: result.total }}
+              />
+            )}
           </div>
 
           {result.total === 0 ? (
