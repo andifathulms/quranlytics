@@ -133,6 +133,66 @@ export interface SurahStatRow {
   unique_root_count: number;
 }
 
+export interface RareWord {
+  lemma: string;
+  count: number;
+  verse_key: string | null;
+}
+
+export interface VerseLength {
+  number: number;
+  verse_key: string;
+  word_count: number;
+  letter_count: number;
+}
+
+export interface VerseLengths {
+  surah_id: number;
+  surah_name: string;
+  available: boolean;
+  verses: VerseLength[];
+  summary: { max: number; min: number; avg: number; verse_count: number };
+}
+
+export interface SurahBrief {
+  surah_id: number;
+  name: string;
+  name_arabic: string;
+  revelation_type: "Meccan" | "Medinan";
+  verse_count: number;
+  word_count: number | null;
+  letter_count: number | null;
+  first_verse: Verse | null;
+  last_verse: Verse | null;
+}
+
+export interface SurahPair {
+  available: boolean;
+  a: SurahBrief;
+  b: SurahBrief;
+  symmetry: {
+    same_verse_count: boolean;
+    verse_count_diff: number;
+    word_count_diff: number;
+  };
+}
+
+export interface ChiasticLevel {
+  label: string;
+  verse_key: string;
+  theme: string;
+  text_uthmani: string;
+  translation_en: string;
+}
+
+export interface ChiasticStructure {
+  id: string;
+  title: string;
+  surah: number;
+  attribution: string;
+  levels: ChiasticLevel[];
+}
+
 export interface RootTree {
   root: string; // display form (proper orthography)
   root_key?: string; // normalized lookup key
