@@ -4,11 +4,16 @@ from __future__ import annotations
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from rest_framework import permissions, status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import (
+    api_view,
+    permission_classes,
+    throttle_classes,
+)
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 
 from apps.common.envelope import envelope
 from apps.common.pagination import EnvelopePageNumberPagination
+from apps.common.throttles import VoteRateThrottle, WriteRateThrottle
 
 from .models import Discovery, DiscoveryVote
 from .serializers import (
@@ -51,6 +56,10 @@ class DiscoveryListCreateView(ListCreateAPIView):
             if self.request.method == "POST"
             else DiscoverySerializer
         )
+
+    def get_throttles(self):
+        # Only throttle creation; the public feed (GET) stays unthrottled.
+        return [WriteRateThrottle()] if self.request.method == "POST" else []
 
     def get_queryset(self):
         qs = Discovery.objects.filter(is_public=True).select_related("author")
@@ -123,6 +132,7 @@ def my_discoveries_view(request):
 
 @api_view(["POST"])
 @permission_classes([permissions.IsAuthenticated])
+@throttle_classes([VoteRateThrottle])
 def vote_view(request, pk: int):
     serializer = VoteSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)

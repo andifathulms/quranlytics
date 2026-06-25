@@ -35,6 +35,21 @@ class TestAuth:
         assert api.get("/api/v1/auth/me/").status_code == 401
 
 
+class TestThrottling:
+    def test_register_is_rate_limited(self, api):
+        # Scope "register" is 20/hour; the 21st attempt from the same IP is 429.
+        codes = [
+            api.post(
+                "/api/v1/auth/register/",
+                {"username": f"u{i}", "password": "Str0ng!pass9"},
+                format="json",
+            ).status_code
+            for i in range(21)
+        ]
+        assert codes[-1] == 429
+        assert codes[0] == 201
+
+
 class TestBookmarks:
     def test_create_and_list_scoped_to_user(self, api, verse):
         _register_and_auth(api)

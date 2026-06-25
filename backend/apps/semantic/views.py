@@ -1,16 +1,18 @@
 """Semantic search, cross-reference, and theme-browsing views (Phase 4)."""
 from __future__ import annotations
 
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, throttle_classes
 
 from apps.common.envelope import envelope
 from apps.common.pagination import EnvelopePageNumberPagination
+from apps.common.throttles import SemanticRateThrottle
 from apps.quran.serializers import VerseSerializer
 
 from . import services
 
 
 @api_view(["POST"])
+@throttle_classes([SemanticRateThrottle])
 def semantic_search_view(request):
     query = (request.data.get("query") or "").strip()
     if not query:

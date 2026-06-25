@@ -129,6 +129,14 @@ REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "apps.common.envelope.envelope_exception_handler",
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 50,
+    # Throttles are applied per-view (not globally) so reads stay unthrottled.
+    "DEFAULT_THROTTLE_RATES": {
+        "register": "20/hour",
+        "write": "60/hour",
+        "vote": "300/hour",
+        "semantic": "30/min",
+        "proxy": "60/min",
+    },
 }
 
 # ─── Celery ─────────────────────────────────────────────
