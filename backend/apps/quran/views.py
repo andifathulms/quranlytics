@@ -8,8 +8,10 @@ from django.conf import settings
 from django.core.cache import cache
 from django.db.models import Prefetch, Q
 from rest_framework import status
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, throttle_classes
 from rest_framework.generics import ListAPIView, RetrieveAPIView
+
+from apps.common.throttles import ProxyRateThrottle
 
 from apps.common.arabic import normalize_search
 from apps.common.envelope import envelope
@@ -200,6 +202,7 @@ def _tafsir_id(key: str) -> dict:
 
 
 @api_view(["GET"])
+@throttle_classes([ProxyRateThrottle])
 def tafsir_view(request):
     """GET /tafsir/?key=1:1&lang=en|id — tafsir for a verse (cached 24h).
 
