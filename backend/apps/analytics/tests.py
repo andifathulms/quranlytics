@@ -205,6 +205,54 @@ class TestRefrainServices:
         assert get_repeated_verses(min_count=2)["refrains"] == []
 
 
+class TestDivineNames:
+    def test_dataset_is_well_formed(self):
+        # 99 names + the supreme name; unique ids; lemmas normalize cleanly.
+        from apps.analytics.divine_names_data import ALLAH, DIVINE_NAMES
+
+        assert len(DIVINE_NAMES) == 99
+        entries = [ALLAH, *DIVINE_NAMES]
+        ids = [n["id"] for n in entries]
+        assert len(set(ids)) == len(ids)  # no duplicate ids
+        assert ALLAH["lemma"] == "الله"
+
+    def test_get_divine_names_counts_from_cache(self, computed):
+        from apps.analytics.services import get_divine_names
+
+        result = get_divine_names()
+        assert len(result["names"]) == 100
+        assert result["methodology"]
+        # The fixture verse 1:2 contains الله once; رحمن is absent (no count).
+        by_id = {n["id"]: n for n in result["names"]}
+        assert by_id["allah"]["count"] == 1
+        assert by_id["ar-rahman"]["count"] is None
+
+    def test_divine_name_detail_lists_verses(self, computed):
+        from apps.analytics.services import get_divine_name
+
+        detail = get_divine_name("allah")
+        assert detail["available"] is True
+        assert detail["total"] == 1
+        assert detail["verse_total"] == 1
+        assert detail["verses"][0]["verse_key"] == "1:2"
+        assert detail["per_surah"][0]["surah_id"] == 1
+
+    def test_divine_name_unknown_id(self):
+        from apps.analytics.services import get_divine_name
+
+        assert get_divine_name("not-a-name")["available"] is False
+
+    def test_divine_name_phrase_has_no_count(self):
+        # A phrase name (lemma=None) is available but carries no word-form count.
+        from apps.analytics.services import get_divine_name
+
+        detail = get_divine_name("malik-al-mulk")
+        assert detail["available"] is True
+        assert detail["lemma"] is None
+        assert detail["total"] is None
+        assert detail["verses"] == []
+
+
 class TestAnalyticsAPI:
     def test_word_frequency_endpoint_caches(self, api, computed):
         url = "/api/v1/analytics/word-frequency/?word=حمد"
@@ -235,3 +283,13 @@ class TestAnalyticsAPI:
         res = api.get("/api/v1/analytics/repeated-verses/")
         assert res.status_code == 200
         assert res.json()["data"]["refrains"] == []
+
+    def test_divine_names_endpoint(self, api, computed):
+        res = api.get("/api/v1/analytics/divine-names/")
+        assert res.status_code == 200
+        assert len(res.json()["data"]["names"]) == 100
+
+    def test_divine_name_detail_endpoint(self, api, computed):
+        res = api.get("/api/v1/analytics/divine-names/allah/")
+        assert res.status_code == 200
+        assert res.json()["data"]["total"] == 1

@@ -166,6 +166,20 @@ def rare_words_view(request):
 
 
 @api_view(["GET"])
+def divine_names_view(request):
+    return _cached("divine-names", {}, services.get_divine_names)
+
+
+@api_view(["GET"])
+def divine_name_view(request, name_id: str):
+    return _cached(
+        "divine-name",
+        {"id": name_id},
+        lambda: services.get_divine_name(name_id),
+    )
+
+
+@api_view(["GET"])
 def verify_claim_view(request):
     word = request.query_params.get("word")
     expected = request.query_params.get("expected")

@@ -411,6 +411,117 @@ def get_chiastic_structures() -> list[dict[str, Any]]:
     ]
 
 
+def get_divine_names() -> dict[str, Any]:
+    """The Asmā' al-Ḥusnā (99 names) with word-form occurrence counts.
+
+    Counts come from the materialised frequency cache (one batched query). A
+    ``count`` of ``None`` means the name is a phrase or is not reliably countable
+    as a single word-form — the root link is then the way to explore it. See
+    ``divine_names_data.METHODOLOGY_NOTE`` for how the figures should be read.
+    """
+    from apps.analytics.divine_names_data import (
+        ALLAH,
+        DIVINE_NAMES,
+        METHODOLOGY_NOTE,
+    )
+
+    entries = [ALLAH, *DIVINE_NAMES]
+    lemmas = {
+        normalize_search(n["lemma"]) for n in entries if n["lemma"]
+    }
+    totals = dict(
+        WordFrequency.objects.filter(
+            root__isnull=True, lemma__in=lemmas
+        ).values_list("lemma", "total_count")
+    )
+
+    names = [
+        {
+            "id": n["id"],
+            "number": n["number"],
+            "arabic": n["arabic"],
+            "transliteration": n["transliteration"],
+            "meaning_en": n["meaning_en"],
+            "meaning_id": n["meaning_id"],
+            "root": n["root"],
+            "count": totals.get(normalize_search(n["lemma"])) if n["lemma"] else None,
+        }
+        for n in entries
+    ]
+    return {"names": names, "methodology": METHODOLOGY_NOTE}
+
+
+def get_divine_name(name_id: str, verse_limit: int = 50) -> dict[str, Any]:
+    """Detail for one divine name: per-surah distribution + sample verses.
+
+    The per-surah distribution and total come from the frequency cache; the
+    verses are the actual ``text_uthmani`` ayāt where the word-form occurs
+    (capped at ``verse_limit``, with the true total reported separately).
+    """
+    from apps.analytics.divine_names_data import (
+        ALLAH,
+        DIVINE_NAMES,
+        METHODOLOGY_NOTE,
+    )
+
+    entry = next(
+        (n for n in [ALLAH, *DIVINE_NAMES] if n["id"] == name_id), None
+    )
+    if entry is None:
+        return {"available": False}
+
+    result: dict[str, Any] = {
+        "available": True,
+        "id": entry["id"],
+        "number": entry["number"],
+        "arabic": entry["arabic"],
+        "transliteration": entry["transliteration"],
+        "meaning_en": entry["meaning_en"],
+        "meaning_id": entry["meaning_id"],
+        "root": entry["root"],
+        "lemma": entry["lemma"],
+        "methodology": METHODOLOGY_NOTE,
+        "total": None,
+        "per_surah": [],
+        "verse_total": 0,
+        "verses": [],
+    }
+
+    if not entry["lemma"]:
+        return result  # phrase / not a single countable word-form
+
+    needle = normalize_search(entry["lemma"])
+    freq = WordFrequency.objects.filter(
+        root__isnull=True, lemma=needle
+    ).first()
+    if freq is not None:
+        names = _surah_name_map()
+        result["total"] = freq.total_count
+        result["per_surah"] = [
+            {
+                "surah_id": int(num),
+                "surah_name": names.get(int(num), ""),
+                "count": count,
+            }
+            for num, count in sorted(
+                freq.surah_distribution.items(), key=lambda kv: int(kv[0])
+            )
+        ]
+
+    verses = (
+        Verse.objects.filter(words__lemma=needle)
+        .select_related("surah")
+        .prefetch_related("translations")
+        .distinct()
+        .order_by("surah__number", "number")
+    )
+    result["verse_total"] = verses.count()
+    from apps.quran.serializers import VerseSerializer
+
+    result["verses"] = VerseSerializer(verses[:verse_limit], many=True).data
+    return result
+
+
 def verify_numeric_claim(word: str, expected_count: int) -> dict[str, Any]:
     """Verify a popular numeric claim (e.g. 'يوم appears 365 times').
 

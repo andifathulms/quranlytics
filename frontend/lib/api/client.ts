@@ -3,6 +3,8 @@ import type {
   ChiasticStructure,
   Cooccurrence,
   CrossReferences,
+  DivineNameDetail,
+  DivineNames,
   Envelope,
   NumericClaim,
   PhraseSearch,
@@ -91,6 +93,13 @@ export const api = {
   cooccurrence: (word1: string, word2: string) =>
     request<Cooccurrence>(
       `/analytics/co-occurrence/?word1=${encodeURIComponent(word1)}&word2=${encodeURIComponent(word2)}`,
+    ),
+
+  divineNames: () => request<DivineNames>(`/analytics/divine-names/`),
+
+  divineName: (id: string) =>
+    request<DivineNameDetail>(
+      `/analytics/divine-names/${encodeURIComponent(id)}/`,
     ),
 
   phraseSearch: (q: string) =>

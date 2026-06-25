@@ -83,6 +83,11 @@ export const NAV_GROUPS: NavGroup[] = [
         description: "Verses clustered by semantic theme.",
       },
       {
+        href: "/explore/names",
+        label: "99 Names",
+        description: "The Asmā' al-Ḥusnā — roots, occurrences, and verses.",
+      },
+      {
         href: "/explore",
         label: "Miracle Facts",
         description: "Documented patterns verified against live data.",
