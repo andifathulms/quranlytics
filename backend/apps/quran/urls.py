@@ -22,4 +22,5 @@ urlpatterns = [
         name="verse-words",
     ),
     path("search/", views.search_view, name="search"),
+    path("tafsir/", views.tafsir_view, name="tafsir"),
 ]
