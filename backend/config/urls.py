@@ -13,6 +13,7 @@ api_v1 = [
     path("analytics/", include("apps.analytics.urls")),
     path("semantic/", include("apps.semantic.urls")),
     path("", include("apps.users.urls")),
+    path("", include("apps.community.urls")),
 ]
 
 urlpatterns = [
