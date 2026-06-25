@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { ArabicText } from "@/components/ui/ArabicText";
+import { Popover } from "@/components/ui/Popover";
 import { api } from "@/lib/api/client";
 import type { Verse, Word } from "@/lib/api/types";
 
@@ -14,6 +15,9 @@ export function VerseRow({ verse }: { verse: Verse }) {
   const [words, setWords] = useState<Word[] | null>(verse.words ?? null);
   const [activeId, setActiveId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
+  const anchorRef = useRef<HTMLButtonElement | null>(null);
+
+  const activeWord = words?.find((w) => w.id === activeId) ?? null;
 
   const en = verse.translations.find((t) => t.language === "en");
   const id = verse.translations.find((t) => t.language === "id");
@@ -47,19 +51,19 @@ export function VerseRow({ verse }: { verse: Verse }) {
       >
         {words && words.length > 0 ? (
           words.map((w) => (
-            <span key={w.id} className="relative">
-              <button
-                onClick={() => setActiveId(activeId === w.id ? null : w.id)}
-                className="rounded px-1 transition-colors hover:bg-waraq/20"
-              >
-                <ArabicText className="text-3xl leading-loose">
-                  {w.arabic}
-                </ArabicText>
-              </button>
-              {activeId === w.id && (
-                <WordTooltip word={w} onClose={() => setActiveId(null)} />
-              )}
-            </span>
+            <button
+              key={w.id}
+              ref={activeId === w.id ? anchorRef : undefined}
+              onClick={(e) => {
+                anchorRef.current = e.currentTarget;
+                setActiveId(activeId === w.id ? null : w.id);
+              }}
+              className="rounded px-1 transition-colors hover:bg-waraq/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            >
+              <ArabicText className="text-3xl leading-loose">
+                {w.arabic}
+              </ArabicText>
+            </button>
           ))
         ) : (
           <ArabicText className="text-3xl leading-loose">
@@ -67,6 +71,17 @@ export function VerseRow({ verse }: { verse: Verse }) {
           </ArabicText>
         )}
       </div>
+
+      <Popover
+        open={activeWord !== null}
+        onClose={() => setActiveId(null)}
+        anchorRef={anchorRef}
+        label="Word details"
+      >
+        {activeWord && (
+          <WordTooltip word={activeWord} onClose={() => setActiveId(null)} />
+        )}
+      </Popover>
 
       {/* Translations — side by side. */}
       <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">

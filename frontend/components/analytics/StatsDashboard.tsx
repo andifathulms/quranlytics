@@ -25,6 +25,7 @@ const METRICS: { key: Metric; label: string }[] = [
 export function StatsDashboard({ rows }: { rows: SurahStatRow[] }) {
   const [metric, setMetric] = useState<Metric>("word_count");
   const [sortDesc, setSortDesc] = useState(false);
+  const [selected, setSelected] = useState<number | null>(null);
 
   const max = useMemo(
     () => Math.max(1, ...rows.map((r) => r[metric])),
@@ -56,10 +57,11 @@ export function StatsDashboard({ rows }: { rows: SurahStatRow[] }) {
           <button
             key={m.key}
             onClick={() => setMetric(m.key)}
-            className={`rounded-full px-3 py-1 text-sm transition-colors ${
+            aria-pressed={metric === m.key}
+            className={`rounded-full px-3 py-1 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg ${
               metric === m.key
-                ? "bg-khatulistiwa text-parchment"
-                : "border border-sand text-lapis/70 hover:bg-sand/40"
+                ? "bg-accent text-white"
+                : "border border-border text-muted hover:bg-surface-2"
             }`}
           >
             {m.label}
@@ -74,8 +76,8 @@ export function StatsDashboard({ rows }: { rows: SurahStatRow[] }) {
       </div>
 
       {/* Per-surah column chart (114 surahs, in Mushaf order). */}
-      <div className="rounded-lg border border-sand bg-lapis p-4">
-        <div className="mb-2 flex items-center gap-3 text-xs text-parchment/70">
+      <div className="rounded-lg border border-border bg-lapis p-4">
+        <div className="mb-2 flex flex-wrap items-center gap-3 text-xs text-parchment/70">
           <span className="uppercase tracking-wide">
             {METRICS.find((m) => m.key === metric)?.label} per surah
           </span>
@@ -85,17 +87,35 @@ export function StatsDashboard({ rows }: { rows: SurahStatRow[] }) {
           <span className="flex items-center gap-1">
             <i className="inline-block h-2 w-2 rounded-sm bg-khatulistiwa" /> Medinan
           </span>
+          <span className="ml-auto font-mono" aria-live="polite">
+            {selected
+              ? (() => {
+                  const r = rows.find((x) => x.surah_id === selected);
+                  return r
+                    ? `${r.surah_id}. ${r.surah_name}: ${r[metric].toLocaleString()}`
+                    : "";
+                })()
+              : "Tap a bar"}
+          </span>
         </div>
-        <div className="flex h-40 items-end gap-[2px] overflow-x-auto">
+        <div className="flex h-40 items-end gap-1 overflow-x-auto">
           {rows.map((r) => (
-            <div
+            <button
               key={r.surah_id}
+              type="button"
               title={`${r.surah_id}. ${r.surah_name}: ${r[metric].toLocaleString()}`}
-              className="w-2 shrink-0 rounded-t-sm"
+              aria-label={`Surah ${r.surah_id} ${r.surah_name}: ${r[metric].toLocaleString()}`}
+              aria-pressed={selected === r.surah_id}
+              onClick={() =>
+                setSelected(selected === r.surah_id ? null : r.surah_id)
+              }
+              className="w-3 shrink-0 rounded-t-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-waraq"
               style={{
                 height: `${Math.max(2, (r[metric] / max) * 100)}%`,
                 backgroundColor:
                   r.revelation_type === "Meccan" ? "#C9A84C" : "#1B4F72",
+                outline:
+                  selected === r.surah_id ? "2px solid #F5F0E8" : undefined,
               }}
             />
           ))}
@@ -103,31 +123,34 @@ export function StatsDashboard({ rows }: { rows: SurahStatRow[] }) {
       </div>
 
       {/* Sortable table. */}
-      <div className="overflow-hidden rounded-lg border border-sand">
+      <div className="overflow-hidden rounded-lg border border-border">
         <table className="w-full text-sm">
-          <thead className="bg-sand/40 text-left">
+          <thead className="bg-surface-2 text-left">
             <tr>
               <th className="px-3 py-2">Surah</th>
               <th className="px-3 py-2">Type</th>
-              <th
-                className="cursor-pointer px-3 py-2 text-right"
-                onClick={() => setSortDesc((s) => !s)}
-              >
-                {METRICS.find((m) => m.key === metric)?.label}{" "}
-                {sortDesc ? "↓" : "·"}
+              <th className="px-3 py-2 text-right" aria-sort={sortDesc ? "descending" : "none"}>
+                <button
+                  type="button"
+                  onClick={() => setSortDesc((s) => !s)}
+                  className="ml-auto flex items-center gap-1 rounded font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                >
+                  {METRICS.find((m) => m.key === metric)?.label}{" "}
+                  <span aria-hidden="true">{sortDesc ? "↓" : "·"}</span>
+                </button>
               </th>
             </tr>
           </thead>
           <tbody>
             {sorted.map((r) => (
-              <tr key={r.surah_id} className="border-t border-sand/60">
+              <tr key={r.surah_id} className="border-t border-border">
                 <td className="px-3 py-1.5">
                   {r.surah_id}. {r.surah_name}
                 </td>
-                <td className="px-3 py-1.5 text-lapis/60">
+                <td className="px-3 py-1.5 text-muted">
                   {r.revelation_type}
                 </td>
-                <td className="px-3 py-1.5 text-right font-mono text-waraq">
+                <td className="px-3 py-1.5 text-right font-mono text-gold">
                   {r[metric].toLocaleString()}
                 </td>
               </tr>
