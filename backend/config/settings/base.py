@@ -152,7 +152,7 @@ QURAN_API_BASE = os.environ.get(
     "QURAN_API_BASE", "https://api.quran.com/api/v4"
 )
 QURAN_API_KEY = os.environ.get("QURAN_API_KEY", "")
-TRANSLATION_IDS = {"en": 131, "id": 33}  # Sahih International, Kemenag RI
+TRANSLATION_IDS = {"en": 20, "id": 33}  # Saheeh International, Kemenag RI
 # quran.com exposes Ibn Kathir (EN). Indonesian Kemenag tafsir is not available
 # via this API (PRD open question — to be sourced/licensed separately), so it is
 # intentionally omitted; the tafsir endpoint returns a clear 400 for it.
