@@ -173,6 +173,23 @@ export interface Cooccurrence {
   verses: Verse[];
 }
 
+export interface PhraseSearch {
+  phrase: string;
+  count: number;
+  verses: Verse[];
+}
+
+export interface RepeatedVerse {
+  count: number;
+  word_count: number;
+  verse_keys: string[];
+  verse: Verse;
+}
+
+export interface RepeatedVerses {
+  refrains: RepeatedVerse[];
+}
+
 export interface SurahStatRow {
   surah_id: number;
   surah_name: string;

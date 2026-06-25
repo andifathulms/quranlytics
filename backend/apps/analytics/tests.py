@@ -135,6 +135,76 @@ class TestStructuralServices:
         assert level_12["text_uthmani"].startswith("ٱلْحَمْدُ")
 
 
+class TestRefrainServices:
+    def test_search_phrase_finds_subphrase(self, verse):
+        from apps.analytics.services import search_phrase
+
+        # "رب العالمين" is a sub-phrase of the fixture verse 1:2.
+        result = search_phrase("رب العالمين")
+        assert result["count"] == 1
+        assert result["verses"][0]["verse_key"] == "1:2"
+
+    def test_search_phrase_is_hamza_robust(self, verse):
+        from apps.analytics.services import search_phrase
+
+        # Query with alef-wasla (ٱ); text_clean stores a plain alef (ا).
+        # normalize_search unifies them, so the phrase still matches.
+        result = search_phrase("ٱلحمد لله")
+        assert result["count"] == 1
+        assert result["verses"][0]["verse_key"] == "1:2"
+
+    def test_search_phrase_matches_uthmani_orthography(self, surah):
+        # Uthmani spelling carries standalone hamzas + unusual letters the user
+        # won't type (here ءَالَآءِ). An ordinary-spelling query must still match.
+        from apps.analytics.services import search_phrase
+        from apps.quran.models import Verse
+
+        Verse.objects.create(
+            surah=surah,
+            number=13,
+            text_uthmani="فَبِأَىِّ ءَالَآءِ رَبِّكُمَا تُكَذِّبَانِ",
+            text_clean="فبأى ءالاء ربكما تكذبان",
+            juz_number=27,
+            page_number=531,
+            revelation_order=9713,
+        )
+        result = search_phrase("فبأي آلاء ربكما")
+        assert result["count"] == 1
+        assert result["verses"][0]["verse_key"] == "1:13"
+
+    def test_search_phrase_no_match(self, verse):
+        from apps.analytics.services import search_phrase
+
+        assert search_phrase("كلمة غير موجودة")["count"] == 0
+
+    def test_repeated_verses_groups_duplicates(self, verse, surah):
+        from apps.analytics.services import get_repeated_verses
+        from apps.quran.models import Verse
+
+        # A second verse with identical text — a verbatim refrain.
+        Verse.objects.create(
+            surah=surah,
+            number=3,
+            text_uthmani=verse.text_uthmani,
+            text_clean=verse.text_clean,
+            juz_number=1,
+            page_number=1,
+            revelation_order=5003,
+        )
+        result = get_repeated_verses(min_count=2)
+        assert len(result["refrains"]) == 1
+        refrain = result["refrains"][0]
+        assert refrain["count"] == 2
+        assert refrain["word_count"] == 4
+        assert set(refrain["verse_keys"]) == {"1:2", "1:3"}
+
+    def test_repeated_verses_excludes_singletons(self, verse):
+        from apps.analytics.services import get_repeated_verses
+
+        # The lone fixture verse appears once — not a refrain.
+        assert get_repeated_verses(min_count=2)["refrains"] == []
+
+
 class TestAnalyticsAPI:
     def test_word_frequency_endpoint_caches(self, api, computed):
         url = "/api/v1/analytics/word-frequency/?word=حمد"
@@ -152,3 +222,16 @@ class TestAnalyticsAPI:
         res = api.get("/api/v1/analytics/verify-claim/?word=حمد&expected=1")
         assert res.status_code == 200
         assert res.json()["data"]["verified"] is True
+
+    def test_phrase_endpoint(self, api, verse):
+        res = api.get("/api/v1/analytics/phrase/?q=رب العالمين")
+        assert res.status_code == 200
+        assert res.json()["data"]["count"] == 1
+
+    def test_phrase_endpoint_requires_param(self, api):
+        assert api.get("/api/v1/analytics/phrase/").status_code == 400
+
+    def test_repeated_verses_endpoint(self, api, verse):
+        res = api.get("/api/v1/analytics/repeated-verses/")
+        assert res.status_code == 200
+        assert res.json()["data"]["refrains"] == []
