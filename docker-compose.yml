@@ -1,6 +1,8 @@
 services:
   db:
-    image: postgres:16
+    # pgvector image = Postgres 16 + the vector extension (Phase 4 semantic
+    # search). Data dir is compatible with the prior postgres:16 volume.
+    image: pgvector/pgvector:pg16
     environment:
       POSTGRES_DB: quranlytics
       POSTGRES_USER: quran

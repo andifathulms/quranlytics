@@ -1,4 +1,5 @@
 -r base.txt
+-r ml.txt
 pytest==8.2.1
 pytest-django==4.8.0
 factory-boy==3.3.0
