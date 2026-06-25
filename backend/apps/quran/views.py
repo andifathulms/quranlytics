@@ -159,12 +159,52 @@ def search_view(request):
 _VERSE_KEY_RE = re.compile(r"^\d{1,3}:\d{1,3}$")
 
 
+_UNAVAILABLE = "Tafsir source is unavailable right now."
+
+
+def _tafsir_en(key: str) -> dict:
+    """Ibn Kathir (EN) from quran.com (per-verse). Caching is handled by view."""
+    resp = requests.get(
+        f"{settings.QURAN_API_BASE}/tafsirs/{settings.TAFSIR_IDS['en']}/by_ayah/{key}",
+        timeout=20,
+    )
+    resp.raise_for_status()
+    tafsir = resp.json().get("tafsir", {})
+    return {
+        "verse_key": key,
+        "language": "en",
+        "resource_name": tafsir.get("resource_name", "Ibn Kathir"),
+        "text": tafsir.get("text", ""),
+    }
+
+
+def _tafsir_id(key: str) -> dict:
+    """Kemenag (ID) from equran.id — fetched per surah, cached, then sliced."""
+    surah, ayah = (int(p) for p in key.split(":"))
+    surah_cache = f"tafsir:id:surah:{surah}"
+    by_ayah = cache.get(surah_cache)
+    if by_ayah is None:
+        resp = requests.get(
+            f"{settings.EQURAN_API_BASE}/tafsir/{surah}", timeout=25
+        )
+        resp.raise_for_status()
+        entries = resp.json().get("data", {}).get("tafsir", [])
+        by_ayah = {str(e["ayat"]): e["teks"] for e in entries}
+        cache.set(surah_cache, by_ayah, settings.ANALYTICS_CACHE_TTL)
+    return {
+        "verse_key": key,
+        "language": "id",
+        "resource_name": "Tafsir Kemenag RI",
+        "text": by_ayah.get(str(ayah), ""),
+    }
+
+
 @api_view(["GET"])
 def tafsir_view(request):
     """GET /tafsir/?key=1:1&lang=en|id — tafsir for a verse (cached 24h).
 
-    Proxies the quran.com tafsir API (Ibn Kathir EN / Kemenag ID) and caches
-    the result, since tafsir text is static.
+    EN: Ibn Kathir via quran.com. ID: Kemenag via equran.id. Tafsir is static,
+    so results are cached.
     """
     key = (request.query_params.get("key") or "").strip()
     lang = request.query_params.get("lang", "en")
@@ -173,36 +213,23 @@ def tafsir_view(request):
             errors=[{"message": "Provide a valid verse 'key' like 1:1."}],
             status=status.HTTP_400_BAD_REQUEST,
         )
-    tafsir_id = settings.TAFSIR_IDS.get(lang)
-    if tafsir_id is None:
+    fetchers = {"en": _tafsir_en, "id": _tafsir_id}
+    if lang not in fetchers:
         return envelope(
-            errors=[{"message": f"No tafsir configured for language '{lang}'."}],
+            errors=[{"message": f"No tafsir available for language '{lang}'."}],
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    cache_key = f"tafsir:{tafsir_id}:{key}"
+    cache_key = f"tafsir:{lang}:{key}"
     cached = cache.get(cache_key)
     if cached is not None:
         return envelope(cached, meta={"cache": "HIT"}, headers={"X-Cache": "HIT"})
-
     try:
-        resp = requests.get(
-            f"{settings.QURAN_API_BASE}/tafsirs/{tafsir_id}/by_ayah/{key}",
-            timeout=20,
-        )
-        resp.raise_for_status()
-        tafsir = resp.json().get("tafsir", {})
+        data = fetchers[lang](key)
     except requests.RequestException:
         return envelope(
-            errors=[{"message": "Tafsir source is unavailable right now."}],
+            errors=[{"message": _UNAVAILABLE}],
             status=status.HTTP_502_BAD_GATEWAY,
         )
-
-    data = {
-        "verse_key": key,
-        "language": lang,
-        "resource_name": tafsir.get("resource_name", ""),
-        "text": tafsir.get("text", ""),
-    }
     cache.set(cache_key, data, settings.ANALYTICS_CACHE_TTL)
     return envelope(data, meta={"cache": "MISS"}, headers={"X-Cache": "MISS"})

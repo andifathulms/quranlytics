@@ -73,7 +73,7 @@ export const api = {
   search: (q: string, lang: "ar" | "en" | "id" = "ar") =>
     request<Verse[]>(`/search/?q=${encodeURIComponent(q)}&lang=${lang}`),
 
-  tafsir: (key: string, lang: "en" = "en") =>
+  tafsir: (key: string, lang: "en" | "id" = "en") =>
     request<Tafsir>(`/tafsir/?key=${encodeURIComponent(key)}&lang=${lang}`),
 
   wordFrequency: (params: { word?: string; root?: string }) => {
