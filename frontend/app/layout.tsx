@@ -25,6 +25,7 @@ const NAV = [
   { href: "/semantic", label: "Semantic" },
   { href: "/themes", label: "Themes" },
   { href: "/explore", label: "Explore" },
+  { href: "/discoveries", label: "Discoveries" },
 ];
 
 export default function RootLayout({

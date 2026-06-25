@@ -43,3 +43,20 @@ body {
 .tafsir-body b {
   color: #1b4f72;
 }
+
+/* Print / "Save as PDF": show only the discovery share card. */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .share-card,
+  .share-card * {
+    visibility: visible;
+  }
+  .share-card {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    border-radius: 0;
+  }
+}

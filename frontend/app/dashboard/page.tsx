@@ -24,13 +24,27 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <header>
-        <h1 className="font-display text-3xl">
-          Salam, {user.username}
-        </h1>
-        <p className="text-lapis/60 dark:text-parchment/60">
-          Your saved verses and notes.
-        </p>
+      <header className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="font-display text-3xl">Salam, {user.username}</h1>
+          <p className="text-lapis/60 dark:text-parchment/60">
+            Your saved verses, notes, and discoveries.
+          </p>
+        </div>
+        <div className="flex gap-2 text-sm">
+          <Link
+            href={`/u/${user.username}`}
+            className="rounded-lg border border-khatulistiwa px-3 py-1.5 text-khatulistiwa hover:bg-sand/40"
+          >
+            My public profile
+          </Link>
+          <Link
+            href="/discoveries/new"
+            className="rounded-lg bg-khatulistiwa px-3 py-1.5 text-parchment hover:bg-lapis"
+          >
+            + Share a discovery
+          </Link>
+        </div>
       </header>
 
       <section>

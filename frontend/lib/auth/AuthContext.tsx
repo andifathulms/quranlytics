@@ -16,6 +16,7 @@ const TOKEN_KEY = "quranlytics.token";
 
 interface AuthState {
   user: User | null;
+  token: string | null;
   ready: boolean; // initial token/user load finished
   login: (username: string, password: string) => Promise<void>;
   register: (username: string, email: string, password: string) => Promise<void>;
@@ -152,6 +153,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo<AuthState>(
     () => ({
       user,
+      token,
       ready,
       login,
       register,
@@ -162,7 +164,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       saveNote,
       removeNote,
     }),
-    [user, ready, login, register, logout, bookmarks, notes, toggleBookmark, saveNote, removeNote],
+    [user, token, ready, login, register, logout, bookmarks, notes, toggleBookmark, saveNote, removeNote],
   );
 
   return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;
