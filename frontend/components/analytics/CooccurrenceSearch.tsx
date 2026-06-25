@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { ShareDiscoveryButton } from "@/components/community/ShareDiscoveryButton";
 import { ArabicText } from "@/components/ui/ArabicText";
 import { Badge } from "@/components/ui/Card";
 import { api, ApiError } from "@/lib/api/client";
@@ -87,6 +88,14 @@ export function CooccurrenceSearch() {
             <span className="text-lapis/50">&amp;</span>
             <ArabicText className="text-2xl">{result.word2}</ArabicText>
             <Badge tone="emerald">{result.count} shared verses</Badge>
+            {result.count > 0 && (
+              <ShareDiscoveryButton
+                title={`${result.word1} and ${result.word2} co-occur in ${result.count} verses`}
+                body={`The words "${result.word1}" and "${result.word2}" appear together in the same verse ${result.count} times.`}
+                category="Thematic"
+                payload={{ word1: result.word1, word2: result.word2, count: result.count }}
+              />
+            )}
           </div>
           {result.count === 0 ? (
             <p className="text-lapis/60">

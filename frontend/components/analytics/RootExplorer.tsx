@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { ShareDiscoveryButton } from "@/components/community/ShareDiscoveryButton";
 import { ArabicText } from "@/components/ui/ArabicText";
 import { Badge, Card } from "@/components/ui/Card";
 import { api, ApiError } from "@/lib/api/client";
@@ -66,12 +67,20 @@ export function RootExplorer({ initialRoot = "" }: { initialRoot?: string }) {
 
       {tree && (
         <div className="space-y-4">
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <ArabicText className="text-3xl text-khatulistiwa">
               {tree.root}
             </ArabicText>
             {tree.meaning && <span className="text-lapis/70">{tree.meaning}</span>}
             <Badge tone="emerald">{tree.derivatives.length} forms</Badge>
+            {tree.derivatives.length > 0 && (
+              <ShareDiscoveryButton
+                title={`Root ${tree.root} (${tree.root_transliteration ?? ""}) yields ${tree.derivatives.length} forms`}
+                body={`The root ${tree.root}${tree.meaning ? ` — "${tree.meaning}"` : ""} appears in ${tree.derivatives.length} derived word-forms across the Quran.`}
+                category="Linguistic"
+                payload={{ root: tree.root, forms: tree.derivatives.length }}
+              />
+            )}
           </div>
 
           {tree.derivatives.length === 0 ? (
