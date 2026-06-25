@@ -190,6 +190,39 @@ export interface RepeatedVerses {
   refrains: RepeatedVerse[];
 }
 
+export interface DivineNameSummary {
+  id: string;
+  number: number;
+  arabic: string;
+  transliteration: string;
+  meaning_en: string;
+  meaning_id: string;
+  root: string | null;
+  count: number | null;
+}
+
+export interface DivineNames {
+  names: DivineNameSummary[];
+  methodology: string;
+}
+
+export interface DivineNameDetail {
+  available: boolean;
+  id: string;
+  number: number;
+  arabic: string;
+  transliteration: string;
+  meaning_en: string;
+  meaning_id: string;
+  root: string | null;
+  lemma: string | null;
+  methodology: string;
+  total: number | null;
+  per_surah: { surah_id: number; surah_name: string; count: number }[];
+  verse_total: number;
+  verses: Verse[];
+}
+
 export interface SurahStatRow {
   surah_id: number;
   surah_name: string;
