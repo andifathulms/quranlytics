@@ -39,13 +39,23 @@ Run inside the `backend` container, in order:
 ```bash
 python manage.py ingest_surahs
 python manage.py ingest_verses
-python manage.py ingest_translations --language=en --translator_id=131
-python manage.py ingest_translations --language=id --translator_id=33
+python manage.py ingest_translations --language=en --translator_id=20   # Saheeh International
+python manage.py ingest_translations --language=id --translator_id=33   # Kemenag RI
 python manage.py ingest_words
 python manage.py ingest_morphology   # roots + lemmas (Quranic Arabic Corpus)
 python manage.py compute_stats
 python manage.py build_frequency_cache
+
+# Phase 4 — semantic layer (downloads the embedding model once)
+python manage.py ingest_embeddings   # multilingual vector per verse (pgvector)
+python manage.py cluster_themes      # KMeans theme clusters + keyword labels
 ```
+
+> quran.com resource IDs drift over time. `ingest_translations` maps records
+> positionally (the API no longer returns a `verse_key`), and Saheeh
+> International is resource **20** (was 131). Embeddings are computed from the
+> EN+ID translations, so always (re-)run `ingest_embeddings` **after**
+> translations are loaded.
 
 ## Project layout
 
