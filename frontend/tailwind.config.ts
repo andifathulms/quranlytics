@@ -10,12 +10,28 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Raw brand palette (kept for back-compat + opacity modifiers like waraq/20).
         lapis: "#0D1B2A", // primary background, reader mode
         khatulistiwa: "#1B4F72", // accent
         waraq: "#C9A84C", // gold — verse numbers, highlights
         parchment: "#F5F0E8", // light mode background
         sand: "#E8D5A3", // secondary surfaces (light)
         emerald: "#2ECC71", // positive data, found patterns
+
+        // Semantic tokens — resolve to light/dark automatically via CSS vars.
+        bg: "var(--color-bg)",
+        surface: "var(--color-surface)",
+        "surface-2": "var(--color-surface-2)",
+        border: "var(--color-border)",
+        fg: "var(--color-fg)",
+        muted: "var(--color-muted)",
+        accent: "var(--color-accent)",
+        gold: "var(--color-gold)",
+        positive: "var(--color-positive)",
+        danger: "var(--color-danger)",
+      },
+      ringColor: {
+        DEFAULT: "var(--color-accent)",
       },
       fontFamily: {
         quran: ["var(--font-amiri-quran)", "Scheherazade New", "serif"],
