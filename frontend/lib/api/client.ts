@@ -1,13 +1,17 @@
 // Thin fetch wrapper that unwraps the {data, meta, errors} envelope.
 import type {
+  ChiasticStructure,
   Cooccurrence,
   Envelope,
   NumericClaim,
+  RareWord,
   RootTree,
   Surah,
+  SurahPair,
   SurahStatRow,
   Tafsir,
   Verse,
+  VerseLengths,
   WordFrequency,
 } from "./types";
 
@@ -89,6 +93,20 @@ export const api = {
 
   allSurahStats: () =>
     request<{ surahs: SurahStatRow[] }>(`/analytics/surah-stats/`),
+
+  rareWords: (threshold = 1) =>
+    request<{ words: RareWord[] }>(
+      `/analytics/rare-words/?threshold=${threshold}`,
+    ),
+
+  verseLengths: (surahId: number) =>
+    request<VerseLengths>(`/analytics/verse-lengths/${surahId}/`),
+
+  surahPair: (a: number, b: number) =>
+    request<SurahPair>(`/analytics/surah-pair/?a=${a}&b=${b}`),
+
+  chiastic: () =>
+    request<{ structures: ChiasticStructure[] }>(`/analytics/chiastic/`),
 
   verifyClaim: (word: string, expected: number) =>
     request<NumericClaim>(
