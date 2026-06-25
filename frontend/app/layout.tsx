@@ -22,6 +22,8 @@ const NAV = [
   { href: "/analyze/rare", label: "Rare Words" },
   { href: "/analyze/structure", label: "Structure" },
   { href: "/analyze/stats", label: "Statistics" },
+  { href: "/semantic", label: "Semantic" },
+  { href: "/themes", label: "Themes" },
   { href: "/explore", label: "Explore" },
 ];
 

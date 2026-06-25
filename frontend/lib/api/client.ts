@@ -2,14 +2,17 @@
 import type {
   ChiasticStructure,
   Cooccurrence,
+  CrossReferences,
   Envelope,
   NumericClaim,
   RareWord,
   RootTree,
+  SemanticResult,
   Surah,
   SurahPair,
   SurahStatRow,
   Tafsir,
+  ThemeSummary,
   Verse,
   VerseLengths,
   WordFrequency,
@@ -107,6 +110,23 @@ export const api = {
 
   chiastic: () =>
     request<{ structures: ChiasticStructure[] }>(`/analytics/chiastic/`),
+
+  // ── Semantic (Phase 4) ──────────────────────────────
+  semanticSearch: (query: string, limit = 20) =>
+    request<SemanticResult>(`/semantic/search/`, {
+      method: "POST",
+      body: JSON.stringify({ query, limit }),
+    }),
+
+  crossReferences: (verseId: number, limit = 8) =>
+    request<CrossReferences>(
+      `/semantic/cross-references/${verseId}/?limit=${limit}`,
+    ),
+
+  themes: () => request<{ themes: ThemeSummary[] }>(`/semantic/themes/`),
+
+  themeVerses: (clusterId: number) =>
+    request<Verse[]>(`/semantic/themes/${clusterId}/`),
 
   verifyClaim: (word: string, expected: number) =>
     request<NumericClaim>(

@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
+import { ScoredVerseList } from "@/components/semantic/ScoredVerseList";
 import { api, ApiError } from "@/lib/api/client";
-import type { Tafsir, Verse } from "@/lib/api/types";
+import type { ScoredVerse, Tafsir, Verse } from "@/lib/api/types";
 import { verseAudioUrl } from "@/lib/audio";
 import { useAuth } from "@/lib/auth/AuthContext";
 
-type Panel = "none" | "note" | "tafsir";
+type Panel = "none" | "note" | "tafsir" | "related";
 
 export function VerseToolbar({ verse }: { verse: Verse }) {
   const { user, bookmarks, notes, toggleBookmark, saveNote, removeNote } = useAuth();
@@ -80,6 +81,15 @@ export function VerseToolbar({ verse }: { verse: Verse }) {
           📖 Tafsir
         </button>
 
+        {/* Related verses (semantic cross-reference) */}
+        <button
+          onClick={() => setPanel((p) => (p === "related" ? "none" : "related"))}
+          className={btn}
+          title="Semantically related verses"
+        >
+          🔗 Related
+        </button>
+
         <audio
           ref={audioRef}
           src={verseAudioUrl(verse.surah_number, verse.number)}
@@ -101,6 +111,46 @@ export function VerseToolbar({ verse }: { verse: Verse }) {
       )}
 
       {panel === "tafsir" && <TafsirPanel verseKey={verse.verse_key} />}
+
+      {panel === "related" && <RelatedPanel verseId={verse.id} />}
+    </div>
+  );
+}
+
+function RelatedPanel({ verseId }: { verseId: number }) {
+  const [verses, setVerses] = useState<ScoredVerse[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    api
+      .crossReferences(verseId, 8)
+      .then((res) => active && setVerses(res.data.verses))
+      .catch(
+        (e) =>
+          active &&
+          setError(e instanceof ApiError ? e.message : "Failed to load related verses"),
+      );
+    return () => {
+      active = false;
+    };
+  }, [verseId]);
+
+  return (
+    <div className="mt-2 rounded-lg border border-sand bg-white/70 p-4 dark:bg-lapis/40">
+      <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-lapis/50 dark:text-parchment/50">
+        Semantically related verses
+      </div>
+      {error && <p className="text-sm text-red-600">{error}</p>}
+      {!verses && !error && (
+        <p className="text-sm text-lapis/50 dark:text-parchment/50">Loading…</p>
+      )}
+      {verses && verses.length === 0 && (
+        <p className="text-sm text-lapis/50 dark:text-parchment/50">
+          No related verses (embeddings may not be built yet).
+        </p>
+      )}
+      {verses && verses.length > 0 && <ScoredVerseList verses={verses} />}
     </div>
   );
 }

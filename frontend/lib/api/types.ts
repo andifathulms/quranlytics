@@ -86,6 +86,29 @@ export interface NumericClaim {
   verses: string[];
 }
 
+export type ScoredVerse = Verse & { similarity: number };
+
+export interface SemanticResult {
+  query: string;
+  count: number;
+  verses: ScoredVerse[];
+}
+
+export interface CrossReferences {
+  verse_id: number;
+  available: boolean;
+  count: number;
+  verses: ScoredVerse[];
+}
+
+export interface ThemeSummary {
+  cluster_id: number;
+  label: string;
+  keywords: string[];
+  size: number;
+  sample_verses: { verse_key: string }[];
+}
+
 export interface Tafsir {
   verse_key: string;
   language: string;
