@@ -60,8 +60,8 @@ python manage.py cluster_themes      # KMeans theme clusters + keyword labels
 ## Project layout
 
 ```
-backend/    Django 5 + DRF — quran, analytics, semantic, users apps
-frontend/   Next.js 14 reader + analytics UI
+backend/    Django 5 + DRF — quran, analytics, semantic, users, community apps
+frontend/   Next.js 14 reader + analytics + semantic + community UI
 ```
 
 See [CLAUDE.md](CLAUDE.md) and [PRD.md](PRD.md) for full specification.
