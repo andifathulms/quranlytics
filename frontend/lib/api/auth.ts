@@ -2,7 +2,22 @@
 // never cache. The token endpoint returns raw {access, refresh}; everything
 // else uses the standard {data, meta, errors} envelope.
 import { ApiError } from "./client";
-import type { Bookmark, Envelope, Note, User } from "./types";
+import type {
+  Bookmark,
+  Discovery,
+  Envelope,
+  Note,
+  Profile,
+  User,
+} from "./types";
+
+export interface DiscoveryInput {
+  title: string;
+  body: string;
+  category: string;
+  payload?: Record<string, unknown>;
+  is_public?: boolean;
+}
 
 const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8010/api/v1";
@@ -77,4 +92,34 @@ export const auth = {
     }),
   deleteNote: (token: string, id: number) =>
     authRequest<unknown>(`/notes/${id}/`, token, { method: "DELETE" }),
+
+  // ── Discoveries (token may be null for public reads) ──
+  listDiscoveries: (
+    token: string | null,
+    opts: { sort?: "top" | "recent"; category?: string } = {},
+  ) => {
+    const qs = new URLSearchParams();
+    if (opts.sort) qs.set("sort", opts.sort);
+    if (opts.category) qs.set("category", opts.category);
+    return authRequest<Discovery[]>(`/discoveries/?${qs.toString()}`, token);
+  },
+  getDiscovery: (token: string | null, id: number) =>
+    authRequest<Discovery>(`/discoveries/${id}/`, token),
+  myDiscoveries: (token: string) =>
+    authRequest<Discovery[]>(`/discoveries/mine/`, token),
+  createDiscovery: (token: string, data: DiscoveryInput) =>
+    authRequest<Discovery>(`/discoveries/`, token, {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+  deleteDiscovery: (token: string, id: number) =>
+    authRequest<unknown>(`/discoveries/${id}/`, token, { method: "DELETE" }),
+  voteDiscovery: (token: string, id: number, value: -1 | 0 | 1) =>
+    authRequest<{ id: number; vote_score: number; my_vote: number }>(
+      `/discoveries/${id}/vote/`,
+      token,
+      { method: "POST", body: JSON.stringify({ value }) },
+    ),
+  profile: (token: string | null, username: string) =>
+    authRequest<Profile>(`/profiles/${username}/`, token),
 };

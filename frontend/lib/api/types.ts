@@ -86,6 +86,34 @@ export interface NumericClaim {
   verses: string[];
 }
 
+export type DiscoveryCategory =
+  | "Numerical"
+  | "Linguistic"
+  | "Structural"
+  | "Thematic"
+  | "Other";
+
+export interface Discovery {
+  id: number;
+  author_username: string;
+  title: string;
+  body: string;
+  category: DiscoveryCategory;
+  payload: Record<string, unknown>;
+  is_public: boolean;
+  vote_score: number;
+  my_vote: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Profile {
+  username: string;
+  discovery_count: number;
+  total_score: number;
+  discoveries: Discovery[];
+}
+
 export type ScoredVerse = Verse & { similarity: number };
 
 export interface SemanticResult {
