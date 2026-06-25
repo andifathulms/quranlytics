@@ -165,3 +165,12 @@ QURAN_MORPHOLOGY_URL = os.environ.get(
     "QURAN_MORPHOLOGY_URL",
     "https://raw.githubusercontent.com/mustafa0x/quran-morphology/master/quran-morphology.txt",
 )
+
+# ─── Semantic layer (Phase 4) ───────────────────────────
+# Self-hosted multilingual sentence-transformer. 384-dim embeddings stored in
+# pgvector. The model downloads once on first use and is cached in-container.
+EMBEDDING_MODEL = os.environ.get(
+    "EMBEDDING_MODEL", "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+)
+EMBEDDING_DIM = 384
+THEME_CLUSTER_COUNT = int(os.environ.get("THEME_CLUSTER_COUNT", "24"))
