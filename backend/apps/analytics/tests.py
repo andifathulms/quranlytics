@@ -83,6 +83,58 @@ class TestServices:
         assert result["verified"] is True
 
 
+class TestStructuralServices:
+    def test_verse_lengths(self, words, surah):
+        from apps.analytics.services import get_verse_lengths
+
+        result = get_verse_lengths(1)
+        assert result["available"] is True
+        assert result["summary"]["verse_count"] == 1
+        assert result["verses"][0]["word_count"] == 4
+
+    def test_verse_lengths_missing_surah(self):
+        from apps.analytics.services import get_verse_lengths
+
+        assert get_verse_lengths(99)["available"] is False
+
+    def test_find_rare_words_caps_and_resolves_verse(self, computed):
+        from apps.analytics.services import find_rare_words
+
+        rare = find_rare_words(max_count=1, limit=10)
+        # Every fixture lemma appears once; results carry a verse_key.
+        assert rare
+        assert all(r["verse_key"] == "1:2" for r in rare)
+
+    def test_surah_pair(self, db):
+        from apps.analytics.services import get_surah_pair
+        from apps.quran.models import Surah
+
+        for n in (113, 114):
+            Surah.objects.create(
+                number=n,
+                name_arabic="x",
+                name_transliteration=f"S{n}",
+                name_en="x",
+                name_id="x",
+                revelation_type="Meccan",
+                verse_count=5,
+                revelation_order=n,
+            )
+        pair = get_surah_pair(113, 114)
+        assert pair["available"] is True
+        assert pair["symmetry"]["same_verse_count"] is True
+
+    def test_chiastic_enriches_with_text(self, verse, surah):
+        from apps.analytics.services import get_chiastic_structures
+
+        structures = get_chiastic_structures()
+        assert len(structures) >= 1
+        fatihah = next(s for s in structures if s["id"] == "al-fatihah")
+        level_12 = next(l for l in fatihah["levels"] if l["verse_key"] == "1:2")
+        # The fixture verse 1:2 text is injected into the matching level.
+        assert level_12["text_uthmani"].startswith("ٱلْحَمْدُ")
+
+
 class TestAnalyticsAPI:
     def test_word_frequency_endpoint_caches(self, api, computed):
         url = "/api/v1/analytics/word-frequency/?word=حمد"
