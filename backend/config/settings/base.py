@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "apps.analytics",
     "apps.semantic",
     "apps.users",
+    "apps.community",
 ]
 
 MIDDLEWARE = [
