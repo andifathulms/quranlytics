@@ -76,6 +76,33 @@ def cooccurrence_view(request):
 
 
 @api_view(["GET"])
+def phrase_search_view(request):
+    q = request.query_params.get("q")
+    if not q:
+        return envelope(
+            errors=[{"message": "Query parameter 'q' is required."}],
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    return _cached("phrase", {"q": q}, lambda: services.search_phrase(q))
+
+
+@api_view(["GET"])
+def repeated_verses_view(request):
+    try:
+        min_count = int(request.query_params.get("min", 2))
+    except ValueError:
+        return envelope(
+            errors=[{"message": "'min' must be an integer."}],
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    return _cached(
+        "repeated-verses",
+        {"min": min_count},
+        lambda: services.get_repeated_verses(min_count=min_count),
+    )
+
+
+@api_view(["GET"])
 def surah_stats_view(request, surah_id: int):
     return _cached(
         "surah-stats",
