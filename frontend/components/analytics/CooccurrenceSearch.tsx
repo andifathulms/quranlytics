@@ -4,7 +4,11 @@ import { useState } from "react";
 
 import { ShareDiscoveryButton } from "@/components/community/ShareDiscoveryButton";
 import { ArabicText } from "@/components/ui/ArabicText";
+import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Card";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { ErrorBanner } from "@/components/ui/ErrorBanner";
+import { Input } from "@/components/ui/Input";
 import { api, ApiError } from "@/lib/api/client";
 import type { Cooccurrence } from "@/lib/api/types";
 
@@ -47,45 +51,37 @@ export function CooccurrenceSearch() {
         }}
         className="flex flex-wrap items-center gap-2"
       >
-        <input
+        <Input
+          script="arabic"
           value={w1}
           onChange={(e) => setW1(e.target.value)}
           onFocus={() => setActive(1)}
-          dir="rtl"
           placeholder="الكلمة الأولى"
-          className="flex-1 rounded-lg border border-sand bg-white px-4 py-2 text-xl font-quran focus:border-khatulistiwa focus:outline-none"
+          className="flex-1"
         />
-        <span className="font-mono text-lapis/50">∩</span>
-        <input
+        <span className="font-mono text-muted">∩</span>
+        <Input
+          script="arabic"
           value={w2}
           onChange={(e) => setW2(e.target.value)}
           onFocus={() => setActive(2)}
-          dir="rtl"
           placeholder="الكلمة الثانية"
-          className="flex-1 rounded-lg border border-sand bg-white px-4 py-2 text-xl font-quran focus:border-khatulistiwa focus:outline-none"
+          className="flex-1"
         />
-        <button
-          type="submit"
-          disabled={loading}
-          className="rounded-lg bg-khatulistiwa px-5 py-2 text-parchment hover:bg-lapis disabled:opacity-50"
-        >
-          {loading ? "…" : "Find"}
-        </button>
+        <Button type="submit" loading={loading}>
+          Find
+        </Button>
       </form>
 
       <ArabicKeyboard onInsert={insert} />
 
-      {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-          {error}
-        </div>
-      )}
+      {error && <ErrorBanner message={error} onRetry={run} />}
 
       {result && (
         <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-2">
             <ArabicText className="text-2xl">{result.word1}</ArabicText>
-            <span className="text-lapis/50">&amp;</span>
+            <span className="text-muted">&amp;</span>
             <ArabicText className="text-2xl">{result.word2}</ArabicText>
             <Badge tone="emerald">{result.count} shared verses</Badge>
             {result.count > 0 && (
@@ -98,9 +94,11 @@ export function CooccurrenceSearch() {
             )}
           </div>
           {result.count === 0 ? (
-            <p className="text-lapis/60">
-              No verse contains both words. Try lemma (dictionary) forms.
-            </p>
+            <EmptyState
+              icon="∩"
+              title="No shared verses"
+              description="No verse contains both words. Try lemma (dictionary) forms of each."
+            />
           ) : (
             <VerseList verses={result.verses} />
           )}

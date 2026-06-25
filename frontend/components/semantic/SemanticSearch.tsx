@@ -1,8 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
+import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Card";
+import { ErrorBanner } from "@/components/ui/ErrorBanner";
+import { Input } from "@/components/ui/Input";
 import { api, ApiError } from "@/lib/api/client";
 import type { SemanticResult } from "@/lib/api/types";
 
@@ -17,8 +20,8 @@ const EXAMPLES = [
 
 // Natural-language semantic search — embeds the query and ranks verses by
 // meaning, not keywords. Works across English, Indonesian, and Arabic.
-export function SemanticSearch() {
-  const [query, setQuery] = useState("");
+export function SemanticSearch({ initialQuery = "" }: { initialQuery?: string }) {
+  const [query, setQuery] = useState(initialQuery);
   const [result, setResult] = useState<SemanticResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -38,6 +41,16 @@ export function SemanticSearch() {
     }
   }
 
+  // Auto-run when arriving with a prefilled query (e.g. from global search).
+  const ranFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (initialQuery && ranFor.current !== initialQuery) {
+      ranFor.current = initialQuery;
+      setQuery(initialQuery);
+      run(initialQuery);
+    }
+  }, [initialQuery]);
+
   return (
     <div className="space-y-4">
       <form
@@ -47,19 +60,15 @@ export function SemanticSearch() {
         }}
         className="flex flex-wrap gap-2"
       >
-        <input
+        <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Ask in plain language — e.g. 'mercy and forgiveness'"
-          className="flex-1 rounded-lg border border-sand bg-white px-4 py-2 text-lapis focus:border-khatulistiwa focus:outline-none"
+          className="flex-1"
         />
-        <button
-          type="submit"
-          disabled={loading}
-          className="rounded-lg bg-khatulistiwa px-5 py-2 text-parchment hover:bg-lapis disabled:opacity-50"
-        >
-          {loading ? "…" : "Search"}
-        </button>
+        <Button type="submit" loading={loading}>
+          Search
+        </Button>
       </form>
 
       <div className="flex flex-wrap gap-2 text-xs">
@@ -70,19 +79,19 @@ export function SemanticSearch() {
               setQuery(ex);
               run(ex);
             }}
-            className="rounded-full border border-sand px-3 py-1 text-lapis/60 hover:bg-sand/40 dark:text-parchment/60"
+            className="rounded-full border border-border px-3 py-1 text-muted hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
           >
             {ex}
           </button>
         ))}
       </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <ErrorBanner message={error} onRetry={() => run(query)} />}
 
       {result && (
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-lapis/60 dark:text-parchment/60">
+            <span className="text-sm text-muted">
               Results for “{result.query}”
             </span>
             <Badge tone="blue">{result.count} verses</Badge>

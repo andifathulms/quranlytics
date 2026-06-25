@@ -1,10 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { ShareDiscoveryButton } from "@/components/community/ShareDiscoveryButton";
 import { ArabicText } from "@/components/ui/ArabicText";
+import { Button } from "@/components/ui/Button";
 import { Badge, Card } from "@/components/ui/Card";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { ErrorBanner } from "@/components/ui/ErrorBanner";
+import { Input } from "@/components/ui/Input";
 import { api, ApiError } from "@/lib/api/client";
 import type { RootTree } from "@/lib/api/types";
 
@@ -32,6 +36,16 @@ export function RootExplorer({ initialRoot = "" }: { initialRoot?: string }) {
     }
   }
 
+  // Auto-run when arriving with a prefilled root (deep link / example chip).
+  const ranFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (initialRoot && ranFor.current !== initialRoot) {
+      ranFor.current = initialRoot;
+      setRoot(initialRoot);
+      run(initialRoot);
+    }
+  }, [initialRoot]);
+
   return (
     <div className="space-y-5">
       <form
@@ -41,29 +55,21 @@ export function RootExplorer({ initialRoot = "" }: { initialRoot?: string }) {
         }}
         className="flex flex-wrap gap-2"
       >
-        <input
+        <Input
+          script="arabic"
           value={root}
           onChange={(e) => setRoot(e.target.value)}
-          dir="rtl"
           placeholder="مثال: كتب"
-          className="flex-1 rounded-lg border border-sand bg-white px-4 py-2 text-xl font-quran focus:border-khatulistiwa focus:outline-none"
+          className="flex-1"
         />
-        <button
-          type="submit"
-          disabled={loading}
-          className="rounded-lg bg-khatulistiwa px-5 py-2 text-parchment hover:bg-lapis disabled:opacity-50"
-        >
-          {loading ? "…" : "Explore"}
-        </button>
+        <Button type="submit" loading={loading}>
+          Explore
+        </Button>
       </form>
 
       <ArabicKeyboard onInsert={(ch) => setRoot((r) => r + ch)} />
 
-      {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-          {error}
-        </div>
-      )}
+      {error && <ErrorBanner message={error} onRetry={() => run(root)} />}
 
       {tree && (
         <div className="space-y-4">
@@ -71,7 +77,7 @@ export function RootExplorer({ initialRoot = "" }: { initialRoot?: string }) {
             <ArabicText className="text-3xl text-khatulistiwa">
               {tree.root}
             </ArabicText>
-            {tree.meaning && <span className="text-lapis/70">{tree.meaning}</span>}
+            {tree.meaning && <span className="text-muted">{tree.meaning}</span>}
             <Badge tone="emerald">{tree.derivatives.length} forms</Badge>
             {tree.derivatives.length > 0 && (
               <ShareDiscoveryButton
@@ -84,7 +90,11 @@ export function RootExplorer({ initialRoot = "" }: { initialRoot?: string }) {
           </div>
 
           {tree.derivatives.length === 0 ? (
-            <p className="text-lapis/60">No derivatives found for this root.</p>
+            <EmptyState
+              icon="∅"
+              title="No derivatives found"
+              description="No words in the Quran derive from this root. Check the three root letters."
+            />
           ) : (
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               {tree.derivatives.map((d) => (
@@ -97,13 +107,13 @@ export function RootExplorer({ initialRoot = "" }: { initialRoot?: string }) {
                     {d.forms.map((f) => (
                       <ArabicText
                         key={f}
-                        className="rounded bg-sand/40 px-2 py-0.5 text-lg"
+                        className="rounded bg-surface-2 px-2 py-0.5 text-lg"
                       >
                         {f}
                       </ArabicText>
                     ))}
                   </div>
-                  <div className="mt-2 font-mono text-xs text-lapis/50">
+                  <div className="mt-2 font-mono text-xs text-muted">
                     {d.sample_verses.join(" · ")}
                   </div>
                 </Card>

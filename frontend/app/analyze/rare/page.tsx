@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 
 import { ArabicText } from "@/components/ui/ArabicText";
 import { Badge, Card } from "@/components/ui/Card";
+import { ErrorBanner } from "@/components/ui/ErrorBanner";
+import { SkeletonCard } from "@/components/ui/Skeleton";
 import { api, ApiError } from "@/lib/api/client";
 import type { RareWord } from "@/lib/api/types";
 
@@ -13,6 +15,7 @@ export default function RareWordsPage() {
   const [words, setWords] = useState<RareWord[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [reload, setReload] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -26,28 +29,29 @@ export default function RareWordsPage() {
     return () => {
       active = false;
     };
-  }, [threshold]);
+  }, [threshold, reload]);
 
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="font-display text-3xl">Rare Word Finder</h1>
-        <p className="text-lapis/60 dark:text-parchment/60">
+        <h1 className="font-display text-3xl text-fg">Rare Word Finder</h1>
+        <p className="mt-1 max-w-2xl text-muted">
           Words (by lemma) that occur at most a few times in the whole Quran.
           A threshold of 1 lists hapax legomena — words used exactly once.
         </p>
       </header>
 
       <div className="flex items-center gap-2 text-sm">
-        <span className="text-lapis/60 dark:text-parchment/60">Max occurrences:</span>
+        <span className="text-muted">Max occurrences:</span>
         {[1, 2, 3].map((t) => (
           <button
             key={t}
             onClick={() => setThreshold(t)}
-            className={`rounded-full px-3 py-1 ${
+            aria-pressed={threshold === t}
+            className={`rounded-full px-3 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg ${
               threshold === t
-                ? "bg-khatulistiwa text-parchment"
-                : "border border-sand text-lapis/70 dark:text-parchment/70"
+                ? "bg-accent text-white"
+                : "border border-border text-muted hover:bg-surface-2"
             }`}
           >
             ≤ {t}
@@ -56,9 +60,13 @@ export default function RareWordsPage() {
         {!loading && <Badge tone="emerald">{words.length} words</Badge>}
       </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <ErrorBanner message={error} onRetry={() => setReload((n) => n + 1)} />}
       {loading ? (
-        <p className="text-lapis/50 dark:text-parchment/50">Loading…</p>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <SkeletonCard key={i} />
+          ))}
+        </div>
       ) : (
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {words.map((w) => (
