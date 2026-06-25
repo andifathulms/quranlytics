@@ -69,8 +69,27 @@ class Command(BaseCommand):
     def _cluster_keywords(self, texts_by_cluster, TfidfVectorizer) -> dict[int, list[str]]:
         docs = {cid: " ".join(texts) for cid, texts in texts_by_cluster.items()}
         cluster_ids = list(docs)
+        # If there's no usable English text (e.g. translations not ingested),
+        # degrade gracefully to empty keyword lists rather than crashing.
+        if not any(docs[c].strip() for c in cluster_ids):
+            self.stderr.write(
+                self.style.WARNING(
+                    "No English text for clusters — labels will be unnamed. "
+                    "Did ingest_translations run?"
+                )
+            )
+            return {cid: [] for cid in cluster_ids}
+        # "Allah", honorifics, and a few ubiquitous Quranic verbs appear in
+        # nearly every verse, so they carry no discriminative signal — fold them
+        # into the stopword list for sharper theme labels.
+        from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
+
+        stop = list(ENGLISH_STOP_WORDS) + [
+            "allah", "allāh", "indeed", "say", "said", "o", "ye", "thee",
+            "thou", "unto", "lord", "god",
+        ]
         vectorizer = TfidfVectorizer(
-            stop_words="english", max_features=4000, ngram_range=(1, 2)
+            stop_words=stop, max_features=4000, ngram_range=(1, 2)
         )
         tfidf = vectorizer.fit_transform([docs[c] for c in cluster_ids])
         vocab = vectorizer.get_feature_names_out()
