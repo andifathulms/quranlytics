@@ -1,6 +1,11 @@
-"""Quran reader API views: surahs, verses, words, search."""
+"""Quran reader API views: surahs, verses, words, search, tafsir."""
 from __future__ import annotations
 
+import re
+
+import requests
+from django.conf import settings
+from django.core.cache import cache
 from django.db.models import Prefetch, Q
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -149,3 +154,55 @@ def search_view(request):
     page = paginator.paginate_queryset(verses, request)
     data = VerseSerializer(page, many=True).data
     return paginator.get_paginated_response(data)
+
+
+_VERSE_KEY_RE = re.compile(r"^\d{1,3}:\d{1,3}$")
+
+
+@api_view(["GET"])
+def tafsir_view(request):
+    """GET /tafsir/?key=1:1&lang=en|id — tafsir for a verse (cached 24h).
+
+    Proxies the quran.com tafsir API (Ibn Kathir EN / Kemenag ID) and caches
+    the result, since tafsir text is static.
+    """
+    key = (request.query_params.get("key") or "").strip()
+    lang = request.query_params.get("lang", "en")
+    if not _VERSE_KEY_RE.match(key):
+        return envelope(
+            errors=[{"message": "Provide a valid verse 'key' like 1:1."}],
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    tafsir_id = settings.TAFSIR_IDS.get(lang)
+    if tafsir_id is None:
+        return envelope(
+            errors=[{"message": f"No tafsir configured for language '{lang}'."}],
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    cache_key = f"tafsir:{tafsir_id}:{key}"
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return envelope(cached, meta={"cache": "HIT"}, headers={"X-Cache": "HIT"})
+
+    try:
+        resp = requests.get(
+            f"{settings.QURAN_API_BASE}/tafsirs/{tafsir_id}/by_ayah/{key}",
+            timeout=20,
+        )
+        resp.raise_for_status()
+        tafsir = resp.json().get("tafsir", {})
+    except requests.RequestException:
+        return envelope(
+            errors=[{"message": "Tafsir source is unavailable right now."}],
+            status=status.HTTP_502_BAD_GATEWAY,
+        )
+
+    data = {
+        "verse_key": key,
+        "language": lang,
+        "resource_name": tafsir.get("resource_name", ""),
+        "text": tafsir.get("text", ""),
+    }
+    cache.set(cache_key, data, settings.ANALYTICS_CACHE_TTL)
+    return envelope(data, meta={"cache": "MISS"}, headers={"X-Cache": "MISS"})
