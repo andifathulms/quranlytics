@@ -92,6 +92,37 @@ def surah_stats_list_view(request):
 
 
 @api_view(["GET"])
+def verse_lengths_view(request, surah_id: int):
+    return _cached(
+        "verse-lengths",
+        {"surah_id": surah_id},
+        lambda: services.get_verse_lengths(surah_id),
+    )
+
+
+@api_view(["GET"])
+def surah_pair_view(request):
+    try:
+        a = int(request.query_params["a"])
+        b = int(request.query_params["b"])
+    except (KeyError, ValueError):
+        return envelope(
+            errors=[{"message": "Provide integer surah numbers 'a' and 'b'."}],
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    return _cached(
+        "surah-pair", {"a": a, "b": b}, lambda: services.get_surah_pair(a, b)
+    )
+
+
+@api_view(["GET"])
+def chiastic_view(request):
+    return _cached(
+        "chiastic", {}, lambda: {"structures": services.get_chiastic_structures()}
+    )
+
+
+@api_view(["GET"])
 def rare_words_view(request):
     try:
         threshold = int(request.query_params.get("threshold", 1))

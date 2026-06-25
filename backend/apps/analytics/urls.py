@@ -15,4 +15,12 @@ urlpatterns = [
     ),
     path("rare-words/", views.rare_words_view, name="rare-words"),
     path("verify-claim/", views.verify_claim_view, name="verify-claim"),
+    # Phase 3 structural tools
+    path(
+        "verse-lengths/<int:surah_id>/",
+        views.verse_lengths_view,
+        name="verse-lengths",
+    ),
+    path("surah-pair/", views.surah_pair_view, name="surah-pair"),
+    path("chiastic/", views.chiastic_view, name="chiastic"),
 ]

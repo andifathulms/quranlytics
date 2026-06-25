@@ -185,30 +185,149 @@ def get_all_surah_stats() -> list[dict[str, Any]]:
     ]
 
 
-def find_rare_words(max_count: int = 1) -> list[dict[str, Any]]:
-    """Words (lemmas) appearing <= max_count times in the entire Quran."""
-    rows = (
+def find_rare_words(max_count: int = 1, limit: int = 300) -> list[dict[str, Any]]:
+    """Words (lemmas) appearing <= max_count times in the entire Quran.
+
+    ``max_count=1`` yields hapax legomena. Capped at ``limit`` rows and resolved
+    in two queries (one representative verse per lemma).
+    """
+    rows = list(
         WordFrequency.objects.filter(
             root__isnull=True, total_count__lte=max_count
         )
         .exclude(lemma="")
-        .order_by("total_count", "lemma")
+        .order_by("total_count", "lemma")[:limit]
     )
-    results = []
-    for r in rows:
-        sample = (
-            Word.objects.filter(lemma=r.lemma)
-            .select_related("verse__surah")
+    lemmas = [r.lemma for r in rows]
+    samples: dict[str, str] = {}
+    for w in (
+        Word.objects.filter(lemma__in=lemmas)
+        .select_related("verse__surah")
+        .order_by("lemma", "verse__surah__number", "verse__number")
+    ):
+        samples.setdefault(w.lemma, w.verse.key)
+    return [
+        {"lemma": r.lemma, "count": r.total_count, "verse_key": samples.get(r.lemma)}
+        for r in rows
+    ]
+
+
+def get_verse_lengths(surah_id: int) -> dict[str, Any]:
+    """Per-verse word and letter counts for a surah — for rhythm analysis."""
+    surah = Surah.objects.filter(number=surah_id).first()
+    if surah is None:
+        return {"surah_id": surah_id, "available": False}
+
+    verses = surah.verses.annotate(wc=Count("words")).order_by("number")
+    items = [
+        {
+            "number": v.number,
+            "verse_key": v.key,
+            "word_count": v.wc,
+            "letter_count": sum(1 for ch in v.text_clean if not ch.isspace()),
+        }
+        for v in verses
+    ]
+    counts = [i["word_count"] for i in items] or [0]
+    return {
+        "surah_id": surah_id,
+        "surah_name": surah.name_transliteration,
+        "available": True,
+        "verses": items,
+        "summary": {
+            "max": max(counts),
+            "min": min(counts),
+            "avg": round(sum(counts) / len(counts), 1),
+            "verse_count": len(items),
+        },
+    }
+
+
+def _surah_brief(number: int) -> dict[str, Any] | None:
+    surah = (
+        Surah.objects.select_related("stats")
+        .filter(number=number)
+        .first()
+    )
+    if surah is None:
+        return None
+    from apps.quran.serializers import VerseSerializer
+
+    verses = surah.verses.prefetch_related("translations").order_by("number")
+    first, last = verses.first(), verses.last()
+    stats = getattr(surah, "stats", None)
+    return {
+        "surah_id": surah.number,
+        "name": surah.name_transliteration,
+        "name_arabic": surah.name_arabic,
+        "revelation_type": surah.revelation_type,
+        "verse_count": surah.verse_count,
+        "word_count": stats.word_count if stats else None,
+        "letter_count": stats.letter_count if stats else None,
+        "first_verse": VerseSerializer(first).data if first else None,
+        "last_verse": VerseSerializer(last).data if last else None,
+    }
+
+
+def get_surah_pair(a: int, b: int) -> dict[str, Any]:
+    """Side-by-side symmetry comparison of two surahs (e.g. 113 & 114)."""
+    A, B = _surah_brief(a), _surah_brief(b)
+    if A is None or B is None:
+        return {"available": False}
+    return {
+        "available": True,
+        "a": A,
+        "b": B,
+        "symmetry": {
+            "same_verse_count": A["verse_count"] == B["verse_count"],
+            "verse_count_diff": abs(A["verse_count"] - B["verse_count"]),
+            "word_count_diff": abs((A["word_count"] or 0) - (B["word_count"] or 0)),
+        },
+    }
+
+
+def get_chiastic_structures() -> list[dict[str, Any]]:
+    """Curated chiastic (ring) structures, enriched with live verse text.
+
+    These are scholarly *proposals* presented for study — Quranlytics surfaces
+    the verses and the proposed symmetry; it asserts nothing about what the
+    pattern proves.
+    """
+    from apps.analytics.chiastic_data import CHIASTIC_STRUCTURES
+
+    keys = {
+        lvl["verse_key"]
+        for s in CHIASTIC_STRUCTURES
+        for lvl in s["levels"]
+    }
+    lookup: dict[str, Verse] = {}
+    for key in keys:
+        s_no, v_no = key.split(":")
+        verse = (
+            Verse.objects.filter(surah__number=int(s_no), number=int(v_no))
+            .prefetch_related("translations")
             .first()
         )
-        results.append(
-            {
-                "lemma": r.lemma,
-                "count": r.total_count,
-                "verse_key": sample.verse.key if sample else None,
-            }
+        if verse:
+            lookup[key] = verse
+
+    def enrich(level: dict[str, Any]) -> dict[str, Any]:
+        verse = lookup.get(level["verse_key"])
+        en = (
+            next((t.text for t in verse.translations.all() if t.language == "en"), "")
+            if verse
+            else ""
         )
-    return results
+        return {
+            **level,
+            "text_uthmani": verse.text_uthmani if verse else "",
+            "translation_en": en,
+        }
+
+    return [
+        {**s, "levels": [enrich(lvl) for lvl in s["levels"]]}
+        for s in CHIASTIC_STRUCTURES
+    ]
 
 
 def verify_numeric_claim(word: str, expected_count: int) -> dict[str, Any]:
