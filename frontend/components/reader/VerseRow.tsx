@@ -6,6 +6,7 @@ import { ArabicText } from "@/components/ui/ArabicText";
 import { api } from "@/lib/api/client";
 import type { Verse, Word } from "@/lib/api/types";
 
+import { VerseToolbar } from "./VerseToolbar";
 import { WordTooltip } from "./WordTooltip";
 
 // One verse: clickable Arabic words (RTL) on top, EN + ID translations below.
@@ -31,9 +32,9 @@ export function VerseRow({ verse }: { verse: Verse }) {
   }
 
   return (
-    <article className="border-b border-sand py-6">
+    <article className="border-b border-sand py-6 dark:border-khatulistiwa/30">
       <div className="mb-2 flex items-center gap-2">
-        <span className="rounded-full bg-waraq/20 px-2 py-0.5 font-mono text-xs text-[#8a6d1f]">
+        <span className="rounded-full bg-waraq/20 px-2 py-0.5 font-mono text-xs text-[#8a6d1f] dark:text-waraq">
           {verse.verse_key}
         </span>
       </div>
@@ -71,21 +72,23 @@ export function VerseRow({ verse }: { verse: Verse }) {
       <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
         {en && (
           <div>
-            <div className="text-xs font-semibold uppercase tracking-wide text-lapis/50">
+            <div className="text-xs font-semibold uppercase tracking-wide text-lapis/50 dark:text-parchment/50">
               English · {en.translator}
             </div>
-            <p className="text-sm text-lapis/90">{en.text}</p>
+            <p className="text-sm text-lapis/90 dark:text-parchment/80">{en.text}</p>
           </div>
         )}
         {id && (
           <div>
-            <div className="text-xs font-semibold uppercase tracking-wide text-lapis/50">
+            <div className="text-xs font-semibold uppercase tracking-wide text-lapis/50 dark:text-parchment/50">
               Indonesia · {id.translator}
             </div>
-            <p className="text-sm text-lapis/90">{id.text}</p>
+            <p className="text-sm text-lapis/90 dark:text-parchment/80">{id.text}</p>
           </div>
         )}
       </div>
+
+      <VerseToolbar verse={verse} />
     </article>
   );
 }
