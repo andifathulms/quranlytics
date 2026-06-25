@@ -52,6 +52,11 @@ export const NAV_GROUPS: NavGroup[] = [
         description: "Surface words that appear only once or twice.",
       },
       {
+        href: "/analyze/refrain",
+        label: "Refrains",
+        description: "Find repeated phrases and verbatim refrains across the Quran.",
+      },
+      {
         href: "/analyze/structure",
         label: "Structure",
         description: "Verse rhythm, paired surahs, and ring structures.",

@@ -5,7 +5,9 @@ import type {
   CrossReferences,
   Envelope,
   NumericClaim,
+  PhraseSearch,
   RareWord,
+  RepeatedVerses,
   RootTree,
   SemanticResult,
   Surah,
@@ -90,6 +92,12 @@ export const api = {
     request<Cooccurrence>(
       `/analytics/co-occurrence/?word1=${encodeURIComponent(word1)}&word2=${encodeURIComponent(word2)}`,
     ),
+
+  phraseSearch: (q: string) =>
+    request<PhraseSearch>(`/analytics/phrase/?q=${encodeURIComponent(q)}`),
+
+  repeatedVerses: (min = 2) =>
+    request<RepeatedVerses>(`/analytics/repeated-verses/?min=${min}`),
 
   surahStats: (surahId: number) =>
     request<Record<string, unknown>>(`/analytics/surah-stats/${surahId}/`),

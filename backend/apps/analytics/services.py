@@ -145,6 +145,87 @@ def get_cooccurrence(word1: str, word2: str) -> dict[str, Any]:
     }
 
 
+def _normalize_phrase(text: str) -> str:
+    """Forgiving normalisation for free-text phrase matching.
+
+    Builds on ``normalize_search`` (tashkeel stripped, alef/hamza-carriers
+    unified) and additionally drops the standalone hamza ``ء`` and collapses
+    runs of whitespace. Uthmani orthography is rich in standalone hamzas and
+    spacing the user won't reproduce (e.g. 55:13 ``...ءَالَآءِ...``), so this
+    lets a phrase typed in ordinary spelling still match the sourced text.
+    Used for matching only — the exact Uthmani verse is always what's shown.
+    """
+    return " ".join(normalize_search(text).replace("ء", "").split())
+
+
+def search_phrase(phrase: str) -> dict[str, Any]:
+    """Every verse containing ``phrase`` verbatim (hamza/tashkeel-robust).
+
+    The query and each verse's ``text_clean`` are both run through
+    ``_normalize_phrase`` so matching is insensitive to tashkeel, hamza/alef
+    orthography, and incidental spacing. The scan is over ~6,236 verses and the
+    result is cached (see views), so no index on ``text_clean`` is required.
+    """
+    needle = _normalize_phrase(phrase)
+    if not needle:
+        return {"phrase": phrase, "count": 0, "verses": []}
+
+    matches = [
+        v
+        for v in (
+            Verse.objects.select_related("surah")
+            .prefetch_related("translations")
+            .order_by("surah__number", "number")
+        )
+        if needle in _normalize_phrase(v.text_clean)
+    ]
+    from apps.quran.serializers import VerseSerializer
+
+    serialized = VerseSerializer(matches, many=True).data
+    return {"phrase": phrase, "count": len(serialized), "verses": serialized}
+
+
+def get_repeated_verses(min_count: int = 2, limit: int = 100) -> dict[str, Any]:
+    """Verses whose text recurs verbatim across the Quran (refrains).
+
+    Groups every verse by its normalized text and surfaces groups appearing at
+    least ``min_count`` times — e.g. Surah Ar-Rahman's refrain. Each refrain
+    carries its occurrence count, every location (verse key), and one
+    representative verse (full Uthmani + translations) for display.
+    """
+    from collections import defaultdict
+
+    groups: dict[str, list[Verse]] = defaultdict(list)
+    for v in (
+        Verse.objects.select_related("surah")
+        .prefetch_related("translations")
+        .order_by("surah__number", "number")
+    ):
+        key = normalize_search(v.text_clean)
+        if key:
+            groups[key].append(v)
+
+    from apps.quran.serializers import VerseSerializer
+
+    refrains = []
+    for norm, verses in groups.items():
+        if len(verses) < min_count:
+            continue
+        refrains.append(
+            {
+                "count": len(verses),
+                "word_count": len(norm.split()),
+                "verse_keys": [v.key for v in verses],
+                "verse": VerseSerializer(verses[0]).data,
+            }
+        )
+
+    # Longer refrains first within the same count — they are the more striking
+    # ones; a one-word "verse" repeating is far less notable than a full ayah.
+    refrains.sort(key=lambda r: (r["count"], r["word_count"]), reverse=True)
+    return {"refrains": refrains[:limit]}
+
+
 def get_surah_stats(surah_id: int) -> dict[str, Any]:
     """Precomputed stats from the SurahStats materialised table."""
     stats = (
