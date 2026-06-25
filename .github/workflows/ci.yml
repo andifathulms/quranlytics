@@ -50,6 +50,16 @@ jobs:
         run: python manage.py migrate
       - name: Run tests
         run: python -m pytest -p no:cacheprovider
+      - name: Seed demo data + E2E smoke
+        run: |
+          pip install requests==2.32.3
+          python manage.py migrate --noinput
+          python manage.py seed_demo
+          python manage.py runserver 127.0.0.1:8000 --noreload &
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:8000/api/v1/health/ && break || sleep 1
+          done
+          SMOKE_BASE=http://127.0.0.1:8000/api/v1 python scripts/smoke.py
 
   frontend:
     runs-on: ubuntu-latest
