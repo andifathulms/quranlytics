@@ -2,21 +2,61 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Semantic design tokens. Light is the default (:root); dark is opt-in via the
+ * `.dark` class toggled by ThemeContext. We intentionally do NOT use
+ * `prefers-color-scheme` — the app owns theme state through the class strategy,
+ * and a media query here would fight it (the source of past dark-mode bugs).
+ */
 :root {
-  --background: #f5f0e8;
-  --foreground: #0d1b2a;
+  --color-bg: #f5f0e8; /* page background (parchment) */
+  --color-surface: #ffffff; /* cards, raised panels */
+  --color-surface-2: #efe7d6; /* inset / secondary surfaces */
+  --color-border: #e8d5a3; /* hairlines, dividers (sand) */
+  --color-fg: #0d1b2a; /* primary text (lapis) */
+  --color-muted: #5a6472; /* secondary text */
+  --color-accent: #1b4f72; /* interactive accent (khatulistiwa) */
+  --color-gold: #c9a84c; /* highlights (waraq) */
+  --color-positive: #2ecc71; /* positive data (emerald) */
+  --color-danger: #b91c1c; /* errors */
+
+  /* Back-compat aliases for the old variable names. */
+  --background: var(--color-bg);
+  --foreground: var(--color-fg);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0d1b2a;
-    --foreground: #f5f0e8;
-  }
+.dark {
+  --color-bg: #0d1b2a;
+  --color-surface: #142435;
+  --color-surface-2: #1b2c3f;
+  --color-border: #2a4763;
+  --color-fg: #f5f0e8;
+  --color-muted: #9ca8b5;
+  --color-accent: #5b8fb0; /* lighter for contrast on dark */
+  --color-gold: #c9a84c;
+  --color-positive: #2ecc71;
+  --color-danger: #f87171;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--color-bg);
+  color: var(--color-fg);
+}
+
+/* Skip-to-content link: hidden until keyboard-focused. */
+.skip-link {
+  position: absolute;
+  left: 0.5rem;
+  top: -3rem;
+  z-index: 100;
+  border-radius: 0.5rem;
+  background: var(--color-accent);
+  color: #ffffff;
+  padding: 0.5rem 1rem;
+  transition: top 0.15s ease;
+}
+.skip-link:focus {
+  top: 0.5rem;
 }
 
 /* Arabic / Quranic text rendering — never override direction inline. */
