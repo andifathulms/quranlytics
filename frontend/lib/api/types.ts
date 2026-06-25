@@ -86,6 +86,35 @@ export interface NumericClaim {
   verses: string[];
 }
 
+export interface Tafsir {
+  verse_key: string;
+  language: string;
+  resource_name: string;
+  text: string;
+}
+
+export interface User {
+  id: number;
+  username: string;
+  email: string;
+}
+
+export interface Bookmark {
+  id: number;
+  verse: number;
+  verse_key: string;
+  created_at: string;
+}
+
+export interface Note {
+  id: number;
+  verse: number;
+  verse_key: string;
+  body: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Cooccurrence {
   word1: string;
   word2: string;

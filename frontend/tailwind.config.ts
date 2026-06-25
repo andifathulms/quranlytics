@@ -2,6 +2,7 @@ import type { Config } from "tailwindcss";
 
 // Palette from PRD §7 — "Illuminated Manuscript meets Data Dashboard".
 const config: Config = {
+  darkMode: "class",
   content: [
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
