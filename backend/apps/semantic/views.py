@@ -1,16 +1,13 @@
-"""Semantic search (Phase 4).
-
-Endpoint is wired now so the frontend contract is stable. The embedding-based
-implementation lands in Phase 4; until then it returns a keyword fallback over
-translations so the route is usable.
-"""
+"""Semantic search, cross-reference, and theme-browsing views (Phase 4)."""
 from __future__ import annotations
 
 from rest_framework.decorators import api_view
 
 from apps.common.envelope import envelope
-from apps.quran.models import Verse
+from apps.common.pagination import EnvelopePageNumberPagination
 from apps.quran.serializers import VerseSerializer
+
+from . import services
 
 
 @api_view(["POST"])
@@ -18,18 +15,31 @@ def semantic_search_view(request):
     query = (request.data.get("query") or "").strip()
     if not query:
         return envelope(errors=[{"message": "'query' is required."}], status=400)
+    try:
+        limit = min(int(request.data.get("limit", 20)), 50)
+    except (TypeError, ValueError):
+        limit = 20
+    return envelope(services.semantic_search(query, limit=limit))
 
-    # Phase 1 fallback: keyword match over EN/ID translations. Phase 4 replaces
-    # this with embedding similarity ranking.
-    verses = (
-        Verse.objects.filter(translations__text__icontains=query)
-        .select_related("surah")
-        .prefetch_related("translations")
-        .distinct()
-        .order_by("surah__number", "number")[:50]
-    )
-    data = VerseSerializer(verses, many=True).data
-    return envelope(
-        {"query": query, "verses": data},
-        meta={"mode": "keyword-fallback", "phase4": "embedding-pending"},
-    )
+
+@api_view(["GET"])
+def cross_references_view(request, verse_id: int):
+    try:
+        limit = min(int(request.query_params.get("limit", 10)), 30)
+    except ValueError:
+        limit = 10
+    return envelope(services.cross_references(verse_id, limit=limit))
+
+
+@api_view(["GET"])
+def themes_view(request):
+    return envelope({"themes": services.list_themes()})
+
+
+@api_view(["GET"])
+def theme_verses_view(request, cluster_id: int):
+    qs = services.theme_verses(cluster_id)
+    paginator = EnvelopePageNumberPagination()
+    page = paginator.paginate_queryset(qs, request)
+    data = VerseSerializer(page, many=True).data
+    return paginator.get_paginated_response(data)
