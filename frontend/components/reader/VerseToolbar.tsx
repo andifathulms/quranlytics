@@ -216,6 +216,7 @@ function NoteEditor({
 }
 
 function TafsirPanel({ verseKey }: { verseKey: string }) {
+  const [lang, setLang] = useState<"en" | "id">("en");
   const [tafsir, setTafsir] = useState<Tafsir | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -223,8 +224,10 @@ function TafsirPanel({ verseKey }: { verseKey: string }) {
   useEffect(() => {
     let active = true;
     setLoading(true);
+    setError(null);
+    setTafsir(null);
     api
-      .tafsir(verseKey, "en")
+      .tafsir(verseKey, lang)
       .then((res) => active && setTafsir(res.data))
       .catch(
         (e) =>
@@ -235,22 +238,37 @@ function TafsirPanel({ verseKey }: { verseKey: string }) {
     return () => {
       active = false;
     };
-  }, [verseKey]);
+  }, [verseKey, lang]);
 
   return (
     <div className="mt-2 rounded-lg border border-sand bg-white/70 p-4 dark:bg-lapis/40">
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-xs font-semibold uppercase tracking-wide text-lapis/50 dark:text-parchment/50">
+          {tafsir?.resource_name ?? "Tafsir"}
+        </span>
+        <div className="flex gap-1 text-xs">
+          {(["en", "id"] as const).map((l) => (
+            <button
+              key={l}
+              onClick={() => setLang(l)}
+              className={`rounded px-2 py-0.5 ${
+                lang === l
+                  ? "bg-khatulistiwa text-parchment"
+                  : "border border-sand text-lapis/60 dark:text-parchment/60"
+              }`}
+            >
+              {l === "en" ? "Ibn Kathir" : "Kemenag"}
+            </button>
+          ))}
+        </div>
+      </div>
       {loading && <p className="text-sm text-lapis/50">Loading tafsir…</p>}
       {error && <p className="text-sm text-red-600">{error}</p>}
       {tafsir && (
-        <>
-          <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-lapis/50 dark:text-parchment/50">
-            {tafsir.resource_name}
-          </div>
-          <div
-            className="tafsir-body max-h-96 overflow-y-auto text-sm leading-relaxed text-lapis/90 dark:text-parchment/80"
-            dangerouslySetInnerHTML={{ __html: tafsir.text }}
-          />
-        </>
+        <div
+          className="tafsir-body max-h-96 overflow-y-auto whitespace-pre-line text-sm leading-relaxed text-lapis/90 dark:text-parchment/80"
+          dangerouslySetInnerHTML={{ __html: tafsir.text }}
+        />
       )}
     </div>
   );
