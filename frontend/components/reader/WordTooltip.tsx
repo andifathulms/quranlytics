@@ -5,8 +5,9 @@ import Link from "next/link";
 import { ArabicText } from "@/components/ui/ArabicText";
 import type { Word } from "@/lib/api/types";
 
-// Tooltip shown when a reader clicks a word: transliteration, meaning, root,
-// morphology, plus a jump into the word-frequency analyzer.
+// Morphology detail shown when a reader taps a word: transliteration, meaning,
+// root, morphology, plus jumps into the analyzers. Rendered as the content of a
+// Popover/bottom-sheet (see VerseRow), so it owns no positioning of its own.
 export function WordTooltip({
   word,
   onClose,
@@ -15,29 +16,26 @@ export function WordTooltip({
   onClose: () => void;
 }) {
   return (
-    <div
-      className="absolute z-20 mt-2 w-64 -translate-x-1/2 rounded-lg border border-sand bg-white p-3 text-left shadow-lg"
-      role="dialog"
-    >
+    <div className="text-left">
       <div className="flex items-start justify-between">
-        <ArabicText className="text-2xl text-lapis">{word.arabic}</ArabicText>
+        <ArabicText className="text-2xl text-fg">{word.arabic}</ArabicText>
         <button
           onClick={onClose}
           aria-label="Close"
-          className="text-lapis/40 hover:text-lapis"
+          className="rounded text-muted hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         >
-          ×
+          <span aria-hidden="true">×</span>
         </button>
       </div>
       {word.transliteration && (
-        <div className="mt-1 text-sm italic text-lapis/70">
+        <div className="mt-1 text-sm italic text-muted">
           {word.transliteration}
         </div>
       )}
       {word.translation_en && (
-        <div className="text-sm text-lapis">{word.translation_en}</div>
+        <div className="text-sm text-fg">{word.translation_en}</div>
       )}
-      <dl className="mt-2 space-y-1 text-xs text-lapis/70">
+      <dl className="mt-2 space-y-1 text-xs text-muted">
         {word.lemma && (
           <div>
             <span className="font-semibold">Lemma:</span> {word.lemma}
@@ -63,7 +61,7 @@ export function WordTooltip({
         {word.lemma && (
           <Link
             href={`/analyze/word?word=${encodeURIComponent(word.lemma)}`}
-            className="rounded bg-khatulistiwa px-2 py-1 text-center text-xs text-parchment hover:bg-lapis"
+            className="rounded bg-accent px-2 py-1.5 text-center text-xs text-white hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
           >
             Analyze this word →
           </Link>
@@ -71,7 +69,7 @@ export function WordTooltip({
         {word.root && (
           <Link
             href={`/analyze/root?root=${encodeURIComponent(word.root.root_arabic)}`}
-            className="rounded border border-khatulistiwa px-2 py-1 text-center text-xs text-khatulistiwa hover:bg-sand/40"
+            className="rounded border border-accent px-2 py-1.5 text-center text-xs text-accent hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
           >
             Explore root →
           </Link>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/Card";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { api } from "@/lib/api/client";
 import type { Surah, VerseLengths } from "@/lib/api/types";
 
@@ -14,6 +15,7 @@ export function VerseRhythm({ surahs }: { surahs: Surah[] }) {
   const [surah, setSurah] = useState(1);
   const [data, setData] = useState<VerseLengths | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -35,7 +37,10 @@ export function VerseRhythm({ surahs }: { surahs: Surah[] }) {
       <SurahSelect surahs={surahs} value={surah} onChange={setSurah} label="Surah" />
 
       {loading || !data ? (
-        <p className="text-lapis/50 dark:text-parchment/50">Loading…</p>
+        <div className="space-y-3">
+          <Skeleton className="h-6 w-48" />
+          <Skeleton className="h-40 w-full" />
+        </div>
       ) : (
         <>
           <div className="flex flex-wrap gap-2 text-sm">
@@ -46,21 +51,44 @@ export function VerseRhythm({ surahs }: { surahs: Surah[] }) {
             </Badge>
           </div>
 
-          {/* Word-count column chart. */}
-          <div className="rounded-lg border border-sand bg-lapis p-4">
-            <div className="mb-2 text-xs uppercase tracking-wide text-parchment/70">
-              Words per verse
+          {/* Word-count column chart. Bars are focusable; selecting one fills
+              the readout below (touch has no hover title). */}
+          <div className="rounded-lg border border-border bg-lapis p-4">
+            <div className="mb-2 flex items-center justify-between text-parchment/70">
+              <span className="text-xs uppercase tracking-wide">
+                Words per verse
+              </span>
+              <span className="font-mono text-xs" aria-live="polite">
+                {selected
+                  ? (() => {
+                      const v = data.verses.find(
+                        (x) => x.verse_key === selected,
+                      );
+                      return v
+                        ? `${v.verse_key}: ${v.word_count} words · ${v.letter_count} letters`
+                        : "";
+                    })()
+                  : "Tap a bar"}
+              </span>
             </div>
-            <div className="flex h-40 items-end gap-[2px] overflow-x-auto">
+            <div className="flex h-40 items-end gap-1 overflow-x-auto">
               {data.verses.map((v) => (
-                <div
+                <button
                   key={v.verse_key}
+                  type="button"
                   title={`${v.verse_key}: ${v.word_count} words, ${v.letter_count} letters`}
-                  className="w-2 shrink-0 rounded-t-sm"
+                  aria-label={`Verse ${v.verse_key}: ${v.word_count} words, ${v.letter_count} letters`}
+                  aria-pressed={selected === v.verse_key}
+                  onClick={() =>
+                    setSelected(selected === v.verse_key ? null : v.verse_key)
+                  }
+                  className="w-3 shrink-0 rounded-t-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-waraq"
                   style={{
                     height: `${Math.max(2, (v.word_count / max) * 100)}%`,
                     backgroundColor:
                       v.word_count >= avg ? "#C9A84C" : "#1B4F72",
+                    outline:
+                      selected === v.verse_key ? "2px solid #F5F0E8" : undefined,
                   }}
                 />
               ))}
@@ -69,7 +97,7 @@ export function VerseRhythm({ surahs }: { surahs: Surah[] }) {
 
           {/* Rhythm strip: long (above avg) vs short (below). */}
           <div>
-            <div className="mb-1 text-xs uppercase tracking-wide text-lapis/50 dark:text-parchment/50">
+            <div className="mb-1 text-xs uppercase tracking-wide text-muted">
               Rhythm — long ▰ / short ▱ relative to average
             </div>
             <div dir="rtl" className="flex flex-wrap gap-[3px] font-mono text-lg leading-none">
