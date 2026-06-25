@@ -1,4 +1,5 @@
 import { RootExplorer } from "@/components/analytics/RootExplorer";
+import { ToolIntro } from "@/components/ui/ToolIntro";
 
 export const metadata = { title: "Root Explorer · Quranlytics" };
 
@@ -9,13 +10,15 @@ export default function RootAnalyzePage({
 }) {
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="font-display text-3xl">Root Explorer</h1>
-        <p className="text-lapis/60">
-          Enter a trilateral root (e.g. كتب) to see every derived word, its
-          forms, and frequency.
-        </p>
-      </header>
+      <ToolIntro
+        title="Root Explorer"
+        description="Enter a trilateral root (e.g. كتب) to see every derived word, its forms, and frequency."
+        examples={[
+          { label: "كتب", href: "/analyze/root?root=كتب" },
+          { label: "علم", href: "/analyze/root?root=علم" },
+          { label: "رحم", href: "/analyze/root?root=رحم" },
+        ]}
+      />
       <RootExplorer initialRoot={searchParams.root ?? ""} />
     </div>
   );

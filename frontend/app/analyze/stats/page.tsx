@@ -1,5 +1,6 @@
 import { StatsDashboard } from "@/components/analytics/StatsDashboard";
-import { Card } from "@/components/ui/Card";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { ToolIntro } from "@/components/ui/ToolIntro";
 import { api } from "@/lib/api/client";
 import type { SurahStatRow } from "@/lib/api/types";
 
@@ -20,21 +21,22 @@ export default async function StatsPage() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="font-display text-3xl">Surah Statistics</h1>
-        <p className="text-lapis/60">
-          Word, letter, verse, and unique-form counts across all 114 surahs —
-          computed from the materialized stats table.
-        </p>
-      </header>
+      <ToolIntro
+        title="Surah Statistics"
+        description="Word, letter, verse, and unique-form counts across all 114 surahs — computed from the materialized stats table."
+      />
       {rows.length === 0 ? (
-        <Card>
-          <p className="text-lapis/70">
-            No stats available yet. Run{" "}
-            <code className="font-mono text-sm">python manage.py compute_stats</code>{" "}
-            on the backend.
-          </p>
-        </Card>
+        <EmptyState
+          icon="📊"
+          title="No stats available yet"
+          description={
+            <>
+              Run{" "}
+              <code className="font-mono">python manage.py compute_stats</code>{" "}
+              on the backend.
+            </>
+          }
+        />
       ) : (
         <StatsDashboard rows={rows} />
       )}

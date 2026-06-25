@@ -1,10 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { ShareDiscoveryButton } from "@/components/community/ShareDiscoveryButton";
 import { ArabicText } from "@/components/ui/ArabicText";
+import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Card";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { ErrorBanner } from "@/components/ui/ErrorBanner";
+import { Input } from "@/components/ui/Input";
+import { SkeletonHeatmap } from "@/components/ui/Skeleton";
 import { api, ApiError } from "@/lib/api/client";
 import type { WordFrequency } from "@/lib/api/types";
 
@@ -33,6 +38,16 @@ export function WordSearch({ initialWord = "" }: { initialWord?: string }) {
     }
   }
 
+  // Auto-run when arriving with a prefilled word (deep link / example chip).
+  const ranFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (initialWord && ranFor.current !== initialWord) {
+      ranFor.current = initialWord;
+      setTerm(initialWord);
+      run(initialWord);
+    }
+  }, [initialWord]);
+
   return (
     <div className="space-y-5">
       <form
@@ -42,29 +57,23 @@ export function WordSearch({ initialWord = "" }: { initialWord?: string }) {
         }}
         className="flex flex-wrap gap-2"
       >
-        <input
+        <Input
+          script="arabic"
           value={term}
           onChange={(e) => setTerm(e.target.value)}
-          dir="rtl"
           placeholder="ادخل كلمة…"
-          className="flex-1 rounded-lg border border-sand bg-white px-4 py-2 text-xl font-quran focus:border-khatulistiwa focus:outline-none"
+          className="flex-1"
         />
-        <button
-          type="submit"
-          disabled={loading}
-          className="rounded-lg bg-khatulistiwa px-5 py-2 text-parchment hover:bg-lapis disabled:opacity-50"
-        >
-          {loading ? "…" : "Analyze"}
-        </button>
+        <Button type="submit" loading={loading}>
+          Analyze
+        </Button>
       </form>
 
       <ArabicKeyboard onInsert={(ch) => setTerm((t) => t + ch)} />
 
-      {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-          {error}
-        </div>
-      )}
+      {error && <ErrorBanner message={error} onRetry={() => run(term)} />}
+
+      {loading && !result && <SkeletonHeatmap />}
 
       {result && (
         <div className="space-y-4">
@@ -83,15 +92,17 @@ export function WordSearch({ initialWord = "" }: { initialWord?: string }) {
           </div>
 
           {result.total === 0 ? (
-            <p className="text-lapis/60">
-              No occurrences found. Try the lemma (dictionary form) of the word.
-            </p>
+            <EmptyState
+              icon="∅"
+              title="No occurrences found"
+              description="Try the lemma (dictionary form) of the word — search matches the exact lemma."
+            />
           ) : (
             <>
               <Heatmap data={result} />
-              <div className="overflow-hidden rounded-lg border border-sand">
+              <div className="overflow-hidden rounded-lg border border-border">
                 <table className="w-full text-sm">
-                  <thead className="bg-sand/40 text-left">
+                  <thead className="bg-surface-2 text-left">
                     <tr>
                       <th className="px-3 py-2">Surah</th>
                       <th className="px-3 py-2 text-right font-mono">Count</th>
@@ -99,11 +110,11 @@ export function WordSearch({ initialWord = "" }: { initialWord?: string }) {
                   </thead>
                   <tbody>
                     {result.per_surah.map((p) => (
-                      <tr key={p.surah_id} className="border-t border-sand/60">
+                      <tr key={p.surah_id} className="border-t border-border">
                         <td className="px-3 py-1.5">
                           {p.surah_id}. {p.surah_name}
                         </td>
-                        <td className="px-3 py-1.5 text-right font-mono text-waraq">
+                        <td className="px-3 py-1.5 text-right font-mono text-gold">
                           {p.count}
                         </td>
                       </tr>

@@ -1,4 +1,5 @@
 import { WordSearch } from "@/components/analytics/WordSearch";
+import { ToolIntro } from "@/components/ui/ToolIntro";
 
 export const metadata = { title: "Word Frequency · Quranlytics" };
 
@@ -9,13 +10,15 @@ export default function WordAnalyzePage({
 }) {
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="font-display text-3xl">Word Frequency</h1>
-        <p className="text-lapis/60">
-          Search any Arabic word to see its total count and distribution across
-          all 114 surahs.
-        </p>
-      </header>
+      <ToolIntro
+        title="Word Frequency"
+        description="Search any Arabic word to see its total count and distribution across all 114 surahs."
+        examples={[
+          { label: "ٱللَّه", href: "/analyze/word?word=الله" },
+          { label: "يوم", href: "/analyze/word?word=يوم" },
+          { label: "رحمة", href: "/analyze/word?word=رحمة" },
+        ]}
+      />
       <WordSearch initialWord={searchParams.word ?? ""} />
     </div>
   );
