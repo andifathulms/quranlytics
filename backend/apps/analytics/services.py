@@ -559,6 +559,45 @@ def get_prophet(prophet_id: str, verse_limit: int = 60) -> dict[str, Any]:
     }
 
 
+# Link lemmas for prophets whose verses are curated/phrase-matched (so they
+# have no ``cores``) — used only to light up the reader tooltip, not for counts.
+_CURATED_PROPHET_LINK_LEMMAS = {
+    "salih": ["صالح"],
+    "hud": ["هود"],
+    "yahya": ["يحيي"],
+    "dhulkifl": ["كفل"],
+}
+
+
+def get_lemma_links() -> dict[str, Any]:
+    """Map normalized lemmas → the divine name / prophet they belong to.
+
+    Lets the reader's word tooltip offer a jump into the 99 Names or Prophets
+    explorer when a tapped word is one of them. Small, static, cached.
+    """
+    from apps.analytics.divine_names_data import ALLAH, DIVINE_NAMES
+    from apps.analytics.prophets_data import PROPHETS
+
+    names: dict[str, Any] = {}
+    for n in [ALLAH, *DIVINE_NAMES]:
+        if n["lemma"]:
+            names[normalize_search(n["lemma"])] = {
+                "id": n["id"],
+                "label": n["transliteration"],
+            }
+
+    prophets: dict[str, Any] = {}
+    for p in PROPHETS:
+        lemmas = p.get("cores") or _CURATED_PROPHET_LINK_LEMMAS.get(p["id"], [])
+        for lem in lemmas:
+            prophets[normalize_search(lem)] = {
+                "id": p["id"],
+                "label": p["transliteration"],
+            }
+
+    return {"names": names, "prophets": prophets}
+
+
 def get_divine_names() -> dict[str, Any]:
     """The Asmā' al-Ḥusnā (99 names) with word-form occurrence counts.
 

@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import { ArabicText } from "@/components/ui/ArabicText";
+import { useLemmaLinks } from "@/lib/hooks/useLemmaLinks";
 import type { Word } from "@/lib/api/types";
 
 // Morphology detail shown when a reader taps a word: transliteration, meaning,
@@ -15,6 +16,12 @@ export function WordTooltip({
   word: Word;
   onClose: () => void;
 }) {
+  // If this word is a divine name or a prophet, offer a jump to its explorer.
+  const links = useLemmaLinks();
+  const lemma = word.lemma || "";
+  const nameLink = links?.names[lemma];
+  const prophetLink = links?.prophets[lemma];
+
   return (
     <div className="text-left">
       <div className="flex items-start justify-between">
@@ -72,6 +79,22 @@ export function WordTooltip({
             className="rounded border border-accent px-2 py-1.5 text-center text-xs text-accent hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
           >
             Explore root →
+          </Link>
+        )}
+        {nameLink && (
+          <Link
+            href={`/explore/names?name=${encodeURIComponent(nameLink.id)}`}
+            className="rounded border border-waraq px-2 py-1.5 text-center text-xs text-waraq hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+          >
+            ✦ One of the 99 Names — {nameLink.label} →
+          </Link>
+        )}
+        {prophetLink && (
+          <Link
+            href={`/explore/prophets?prophet=${encodeURIComponent(prophetLink.id)}`}
+            className="rounded border border-waraq px-2 py-1.5 text-center text-xs text-waraq hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+          >
+            📖 Prophet {prophetLink.label} — all verses →
           </Link>
         )}
       </div>

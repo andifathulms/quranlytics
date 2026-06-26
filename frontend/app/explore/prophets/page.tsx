@@ -15,7 +15,11 @@ async function getProphets(): Promise<Prophets | null> {
   }
 }
 
-export default async function ProphetsPage() {
+export default async function ProphetsPage({
+  searchParams,
+}: {
+  searchParams: { prophet?: string };
+}) {
   const data = await getProphets();
 
   return (
@@ -34,6 +38,7 @@ export default async function ProphetsPage() {
         <ProphetsExplorer
           prophets={data.prophets}
           methodology={data.methodology}
+          initialOpenId={searchParams.prophet ?? null}
         />
       )}
     </div>

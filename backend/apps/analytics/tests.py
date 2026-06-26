@@ -309,6 +309,27 @@ class TestProphets:
         assert get_prophet("nobody")["available"] is False
 
 
+class TestLemmaLinks:
+    def test_maps_lemmas_to_names_and_prophets(self):
+        from apps.analytics.services import get_lemma_links
+
+        links = get_lemma_links()
+        # Divine name by its lemma.
+        assert links["names"]["رحمن"]["id"] == "ar-rahman"
+        assert links["names"]["الله"]["id"] == "allah"
+        # Prophet by a core lemma and by a curated (collision) lemma.
+        assert links["prophets"]["موسي"]["id"] == "musa"
+        assert links["prophets"]["صالح"]["id"] == "salih"  # curated link lemma
+        # Disjoint-ish: a prophet lemma isn't also a name.
+        assert "موسي" not in links["names"]
+
+    def test_endpoint_caches(self, api):
+        first = api.get("/api/v1/analytics/lemma-links/")
+        assert first.status_code == 200
+        assert first["X-Cache"] == "MISS"
+        assert api.get("/api/v1/analytics/lemma-links/")["X-Cache"] == "HIT"
+
+
 class TestNumericClaims:
     def test_dataset_is_well_formed(self):
         from apps.analytics.numeric_claims_data import CLAIMS
