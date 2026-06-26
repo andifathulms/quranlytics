@@ -85,25 +85,32 @@ class Command(BaseCommand):
                 continue
 
             root = lem = None
+            is_clitic = False
             for feat in features.split("|"):
-                if feat.startswith("ROOT:"):
+                if feat in ("PREF", "SUFF"):
+                    # Proclitic (و، ال، بـ، يـ vocative…) or enclitic (pronoun,
+                    # emphatic ن…) segment — never the word's stem.
+                    is_clitic = True
+                elif feat.startswith("ROOT:"):
                     root = feat[5:].strip()
                 elif feat.startswith("LEM:"):
                     lem = feat[4:].strip()
 
             key = (s, v, w)
-            rec = words.get(key)
-            if rec is None:
-                rec = {"root": None, "lemma": None, "pos": tag}
-                words[key] = rec
-            # The stem segment carries the ROOT; prefer it for pos + lemma too.
+            rec = words.setdefault(key, {"root": None, "lemma": None, "pos": None})
+
+            # Only the stem contributes lemma/root/pos. Skipping PREF/SUFF
+            # segments stops a prefix's own LEM (e.g. the conjunction LEM:و on
+            # "وَيَعْقُوبَ") from being mistaken for the name's lemma — critical
+            # for proper nouns, which carry a LEM but no ROOT.
+            if is_clitic:
+                continue
             if root and not rec["root"]:
                 rec["root"] = root
-                rec["pos"] = tag
-                if lem:
-                    rec["lemma"] = lem
-            elif lem and not rec["lemma"]:
+            if lem and not rec["lemma"]:
                 rec["lemma"] = lem
+            if tag and not rec["pos"]:
+                rec["pos"] = tag
         return words
 
     # ── apply ───────────────────────────────────────────────────────────
@@ -122,7 +129,15 @@ class Command(BaseCommand):
                     continue
                 changed = False
                 if rec["lemma"]:
-                    word.lemma = normalize_search(rec["lemma"])
+                    new_lemma = normalize_search(rec["lemma"])
+                else:
+                    # No stem lemma from the corpus (e.g. a conjunction+pronoun
+                    # like وَهُوَ). Fall back to the normalized surface form — the
+                    # same default ingest_words uses — so a re-run never leaves a
+                    # stale prefix lemma (the old "LEM:و" bug) behind.
+                    new_lemma = normalize_search(word.arabic)
+                if new_lemma and word.lemma != new_lemma:
+                    word.lemma = new_lemma
                     changed = True
                 if rec["root"]:
                     word.root_id = root_map.get(normalize_search(rec["root"]))
