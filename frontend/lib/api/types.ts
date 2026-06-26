@@ -213,6 +213,49 @@ export interface ProphetDetail {
   references: ProphetReference[];
 }
 
+export type ClaimVerdict = "verified" | "disputed" | "refuted";
+
+export interface ClaimTerm {
+  label: string;
+  lemma: string;
+  count: number;
+}
+
+export interface NumericClaimSummary {
+  id: string;
+  category: string;
+  title: string;
+  claim_en: string;
+  claimed_display: string;
+  verdict: ClaimVerdict;
+  note_en: string;
+  terms: ClaimTerm[];
+}
+
+export interface NumericClaims {
+  claims: NumericClaimSummary[];
+  categories: string[];
+  methodology: string;
+}
+
+export interface ClaimTermDetail extends ClaimTerm {
+  verse_total: number;
+  verses: Verse[];
+}
+
+export interface NumericClaimDetail {
+  available: boolean;
+  id: string;
+  category: string;
+  title: string;
+  claim_en: string;
+  claimed_display: string;
+  verdict: ClaimVerdict;
+  note_en: string;
+  methodology: string;
+  terms: ClaimTermDetail[];
+}
+
 export interface PhraseSearch {
   phrase: string;
   count: number;

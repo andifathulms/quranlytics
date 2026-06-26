@@ -17,6 +17,8 @@ urlpatterns = [
     ),
     path("rare-words/", views.rare_words_view, name="rare-words"),
     path("verify-claim/", views.verify_claim_view, name="verify-claim"),
+    path("claims/", views.numeric_claims_view, name="numeric-claims"),
+    path("claims/<str:claim_id>/", views.numeric_claim_view, name="numeric-claim"),
     path("divine-names/", views.divine_names_view, name="divine-names"),
     path("divine-names/<str:name_id>/", views.divine_name_view, name="divine-name"),
     path("prophets/", views.prophets_view, name="prophets"),

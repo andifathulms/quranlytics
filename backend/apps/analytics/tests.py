@@ -309,6 +309,51 @@ class TestProphets:
         assert get_prophet("nobody")["available"] is False
 
 
+class TestNumericClaims:
+    def test_dataset_is_well_formed(self):
+        from apps.analytics.numeric_claims_data import CLAIMS
+
+        ids = [c["id"] for c in CLAIMS]
+        assert len(set(ids)) == len(ids)
+        for c in CLAIMS:
+            assert c["verdict"] in ("verified", "disputed", "refuted")
+            assert c["terms"] and all(t["lemma"] for t in c["terms"])
+
+    def test_get_numeric_claims_attaches_live_counts(self, computed):
+        from apps.analytics.services import get_numeric_claims
+
+        result = get_numeric_claims()
+        assert result["claims"] and result["methodology"]
+        assert result["categories"]
+        # Every term carries an integer count from the cache.
+        for c in result["claims"]:
+            for t in c["terms"]:
+                assert isinstance(t["count"], int)
+
+    def test_get_numeric_claim_detail_has_terms_and_verses(self, computed):
+        from apps.analytics.services import get_numeric_claim
+
+        detail = get_numeric_claim("day-365")
+        assert detail["available"] is True
+        assert detail["verdict"] == "disputed"
+        assert detail["terms"][0]["lemma"] == "يوم"
+        assert "verse_total" in detail["terms"][0]
+
+    def test_get_numeric_claim_unknown(self):
+        from apps.analytics.services import get_numeric_claim
+
+        assert get_numeric_claim("nope")["available"] is False
+
+    def test_verify_numeric_claim_uses_lemma_count(self, computed):
+        # حمد occurs once as a lemma in the fixture verse.
+        from apps.analytics.services import verify_numeric_claim
+
+        res = verify_numeric_claim("حمد", expected_count=1)
+        assert res["actual"] == 1
+        assert res["verified"] is True
+        assert res["verses"] == ["1:2"]
+
+
 class TestAnalyticsAPI:
     def test_word_frequency_endpoint_caches(self, api, computed):
         url = "/api/v1/analytics/word-frequency/?word=حمد"
@@ -349,3 +394,13 @@ class TestAnalyticsAPI:
         res = api.get("/api/v1/analytics/divine-names/allah/")
         assert res.status_code == 200
         assert res.json()["data"]["total"] == 1
+
+    def test_numeric_claims_endpoint(self, api, computed):
+        res = api.get("/api/v1/analytics/claims/")
+        assert res.status_code == 200
+        assert res.json()["data"]["claims"]
+
+    def test_numeric_claim_detail_endpoint(self, api, computed):
+        res = api.get("/api/v1/analytics/claims/iblis-11/")
+        assert res.status_code == 200
+        assert res.json()["data"]["verdict"] == "verified"
