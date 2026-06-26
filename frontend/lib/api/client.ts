@@ -6,6 +6,7 @@ import type {
   DivineNameDetail,
   DivineNames,
   Envelope,
+  LemmaLinks,
   NumericClaim,
   NumericClaimDetail,
   NumericClaims,
@@ -105,6 +106,8 @@ export const api = {
     request<DivineNameDetail>(
       `/analytics/divine-names/${encodeURIComponent(id)}/`,
     ),
+
+  lemmaLinks: () => request<LemmaLinks>(`/analytics/lemma-links/`),
 
   prophets: () => request<Prophets>(`/analytics/prophets/`),
 

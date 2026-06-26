@@ -213,6 +213,17 @@ export interface ProphetDetail {
   references: ProphetReference[];
 }
 
+export interface LemmaLink {
+  id: string;
+  label: string;
+}
+
+export interface LemmaLinks {
+  // Keyed by normalized Arabic lemma.
+  names: Record<string, LemmaLink>;
+  prophets: Record<string, LemmaLink>;
+}
+
 export type ClaimVerdict = "verified" | "disputed" | "refuted";
 
 export interface ClaimTerm {

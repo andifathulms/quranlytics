@@ -166,6 +166,11 @@ def rare_words_view(request):
 
 
 @api_view(["GET"])
+def lemma_links_view(request):
+    return _cached("lemma-links", {}, services.get_lemma_links)
+
+
+@api_view(["GET"])
 def prophets_view(request):
     return _cached("prophets", {}, services.get_prophets)
 

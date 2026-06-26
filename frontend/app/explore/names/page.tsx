@@ -15,7 +15,11 @@ async function getNames(): Promise<DivineNames | null> {
   }
 }
 
-export default async function DivineNamesPage() {
+export default async function DivineNamesPage({
+  searchParams,
+}: {
+  searchParams: { name?: string };
+}) {
   const data = await getNames();
 
   return (
@@ -34,6 +38,7 @@ export default async function DivineNamesPage() {
         <DivineNamesExplorer
           names={data.names}
           methodology={data.methodology}
+          initialOpenId={searchParams.name ?? null}
         />
       )}
     </div>

@@ -18,11 +18,13 @@ import { VerseList } from "./VerseList";
 export function DivineNamesExplorer({
   names,
   methodology,
+  initialOpenId = null,
 }: {
   names: DivineNameSummary[];
   methodology: string;
+  initialOpenId?: string | null;
 }) {
-  const [openId, setOpenId] = useState<string | null>(null);
+  const [openId, setOpenId] = useState<string | null>(initialOpenId);
 
   return (
     <div className="space-y-6">

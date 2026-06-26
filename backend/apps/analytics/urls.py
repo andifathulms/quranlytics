@@ -21,6 +21,7 @@ urlpatterns = [
     path("claims/<str:claim_id>/", views.numeric_claim_view, name="numeric-claim"),
     path("divine-names/", views.divine_names_view, name="divine-names"),
     path("divine-names/<str:name_id>/", views.divine_name_view, name="divine-name"),
+    path("lemma-links/", views.lemma_links_view, name="lemma-links"),
     path("prophets/", views.prophets_view, name="prophets"),
     path("prophets/<str:prophet_id>/", views.prophet_view, name="prophet"),
     # Phase 3 structural tools
