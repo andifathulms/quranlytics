@@ -411,6 +411,154 @@ def get_chiastic_structures() -> list[dict[str, Any]]:
     ]
 
 
+def _norm_prophet(text: str) -> str:
+    """Normalisation for prophet-name matching: like phrase search, drop ء."""
+    return normalize_search(text).replace("ء", "")
+
+
+def _prophet_match_set(cores: list[str]) -> set[str]:
+    """Expand name cores with attachable proclitics + accusative tanwīn.
+
+    Arabic clitics (و ف ب ل ك, the vocative يا/يـ) attach to a name with no
+    space, so we match the bare form and each prefixed variant rather than try
+    to strip ambiguous leading letters.
+    """
+    from apps.analytics.prophets_data import NAME_PROCLITICS, NAME_SUFFIXES
+
+    return {
+        pre + _norm_prophet(core) + suf
+        for core in cores
+        for pre in NAME_PROCLITICS
+        for suf in NAME_SUFFIXES
+    }
+
+
+def _verse_keys_naming_prophets() -> dict[str, list[str]]:
+    """One scan of the corpus → ``{prophet_id: [verse_key, ...]}`` for DIRECT
+    mentions. ``cores`` prophets are matched from the text; ``verse_keys``
+    prophets use their curated list; ``phrase`` prophets reuse phrase search.
+    """
+    from apps.analytics.prophets_data import PROPHETS
+
+    core_sets = {
+        p["id"]: _prophet_match_set(p["cores"])
+        for p in PROPHETS
+        if p.get("cores")
+    }
+    keys: dict[str, list[str]] = {p["id"]: [] for p in PROPHETS}
+
+    if core_sets:
+        for v in Verse.objects.select_related("surah").only(
+            "number", "text_clean", "surah__number"
+        ):
+            tokens = set(_norm_prophet(v.text_clean).split())
+            for pid, match in core_sets.items():
+                if match & tokens:
+                    keys[pid].append(v.key)
+
+    for p in PROPHETS:
+        if p.get("verse_keys"):
+            keys[p["id"]] = list(p["verse_keys"])
+        elif p.get("phrase"):
+            keys[p["id"]] = [
+                v["verse_key"] for v in search_phrase(p["phrase"])["verses"]
+            ]
+    return keys
+
+
+def get_prophets() -> dict[str, Any]:
+    """The 25 prophets with a count of verses that name each one directly."""
+    from apps.analytics.prophets_data import METHODOLOGY_NOTE, PROPHETS
+
+    keys = _verse_keys_naming_prophets()
+    prophets = [
+        {
+            "id": p["id"],
+            "order": p["order"],
+            "arabic": p["arabic"],
+            "transliteration": p["transliteration"],
+            "name_en": p["name_en"],
+            "name_id": p["name_id"],
+            "blurb_en": p["blurb_en"],
+            "direct_count": len(keys.get(p["id"], [])),
+            "epithet_count": len(p.get("epithets", [])),
+        }
+        for p in sorted(PROPHETS, key=lambda x: x["order"])
+    ]
+    return {"prophets": prophets, "methodology": METHODOLOGY_NOTE}
+
+
+def _verses_for_keys(verse_keys: list[str], limit: int) -> dict[str, Any]:
+    """Serialize verses for a list of ``surah:ayah`` keys, with per-surah tally."""
+    pairs = [k.split(":") for k in verse_keys]
+    q = Q()
+    for s_no, v_no in pairs:
+        q |= Q(surah__number=int(s_no), number=int(v_no))
+    verses = (
+        Verse.objects.filter(q)
+        .select_related("surah")
+        .prefetch_related("translations")
+        .order_by("surah__number", "number")
+        if pairs
+        else Verse.objects.none()
+    )
+    names = _surah_name_map()
+    per_surah: dict[int, int] = {}
+    for k in verse_keys:
+        s = int(k.split(":")[0])
+        per_surah[s] = per_surah.get(s, 0) + 1
+    from apps.quran.serializers import VerseSerializer
+
+    return {
+        "total": len(verse_keys),
+        "verses": VerseSerializer(verses[:limit], many=True).data,
+        "per_surah": [
+            {"surah_id": s, "surah_name": names.get(s, ""), "count": c}
+            for s, c in sorted(per_surah.items())
+        ],
+    }
+
+
+def get_prophet(prophet_id: str, verse_limit: int = 60) -> dict[str, Any]:
+    """Detail for one prophet: DIRECT verses (named) + INDIRECT (epithets)."""
+    from apps.analytics.prophets_data import METHODOLOGY_NOTE, PROPHETS
+
+    entry = next((p for p in PROPHETS if p["id"] == prophet_id), None)
+    if entry is None:
+        return {"available": False}
+
+    direct_keys = _verse_keys_naming_prophets().get(prophet_id, [])
+    direct = _verses_for_keys(direct_keys, verse_limit)
+
+    references = []
+    for ep in entry.get("epithets", []):
+        res = search_phrase(ep["phrase"])
+        references.append(
+            {
+                "label_en": ep["label_en"],
+                "arabic": ep["arabic"],
+                "count": res["count"],
+                "verses": res["verses"][:verse_limit],
+            }
+        )
+
+    return {
+        "available": True,
+        "id": entry["id"],
+        "order": entry["order"],
+        "arabic": entry["arabic"],
+        "transliteration": entry["transliteration"],
+        "name_en": entry["name_en"],
+        "name_id": entry["name_id"],
+        "blurb_en": entry["blurb_en"],
+        "methodology": METHODOLOGY_NOTE,
+        "direct_total": direct["total"],
+        "direct_per_surah": direct["per_surah"],
+        "direct_verses": direct["verses"],
+        "references": references,
+    }
+
+
 def get_divine_names() -> dict[str, Any]:
     """The Asmā' al-Ḥusnā (99 names) with word-form occurrence counts.
 

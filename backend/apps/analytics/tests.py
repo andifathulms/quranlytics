@@ -253,6 +253,62 @@ class TestDivineNames:
         assert detail["verses"] == []
 
 
+class TestProphets:
+    def test_dataset_is_well_formed(self):
+        from apps.analytics.prophets_data import PROPHETS
+
+        assert len(PROPHETS) == 25
+        ids = [p["id"] for p in PROPHETS]
+        assert len(set(ids)) == 25
+        orders = sorted(p["order"] for p in PROPHETS)
+        assert orders == list(range(1, 26))
+        # Every prophet has exactly one way to locate his verses.
+        for p in PROPHETS:
+            assert sum(bool(p.get(k)) for k in ("cores", "verse_keys", "phrase")) == 1
+
+    def test_match_set_includes_proclitic_variants(self):
+        from apps.analytics.services import _prophet_match_set
+
+        s = _prophet_match_set(["موسي"])
+        assert "موسي" in s  # bare
+        assert "وموسي" in s  # with conjunction و
+        assert "يموسي" in s  # attached vocative
+
+    def test_get_prophets_lists_25(self, words):
+        from apps.analytics.services import get_prophets
+
+        result = get_prophets()
+        assert len(result["prophets"]) == 25
+        assert result["methodology"]
+        assert result["prophets"][0]["order"] == 1  # sorted by order
+
+    def test_direct_match_by_core_and_proclitic(self, surah):
+        # A verse naming Musa as "وَمُوسَىٰ" (with attached و) must still match.
+        from apps.analytics.services import get_prophet
+        from apps.quran.models import Verse
+
+        Verse.objects.create(
+            surah=surah, number=40,
+            text_uthmani="وَمُوسَىٰ", text_clean="وموسى",
+            juz_number=1, page_number=1, revelation_order=5040,
+        )
+        detail = get_prophet("musa")
+        assert detail["available"] is True
+        assert "1:40" in [v["verse_key"] for v in detail["direct_verses"]]
+
+    def test_curated_prophet_uses_pinned_keys(self):
+        # Salih is pinned to a curated verse list (collides with "righteous").
+        from apps.analytics.services import get_prophet
+
+        detail = get_prophet("salih")
+        assert detail["direct_total"] == 9
+
+    def test_unknown_prophet(self):
+        from apps.analytics.services import get_prophet
+
+        assert get_prophet("nobody")["available"] is False
+
+
 class TestAnalyticsAPI:
     def test_word_frequency_endpoint_caches(self, api, computed):
         url = "/api/v1/analytics/word-frequency/?word=حمد"

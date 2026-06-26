@@ -166,6 +166,20 @@ def rare_words_view(request):
 
 
 @api_view(["GET"])
+def prophets_view(request):
+    return _cached("prophets", {}, services.get_prophets)
+
+
+@api_view(["GET"])
+def prophet_view(request, prophet_id: str):
+    return _cached(
+        "prophet",
+        {"id": prophet_id},
+        lambda: services.get_prophet(prophet_id),
+    )
+
+
+@api_view(["GET"])
 def divine_names_view(request):
     return _cached("divine-names", {}, services.get_divine_names)
 

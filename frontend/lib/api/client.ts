@@ -8,6 +8,8 @@ import type {
   Envelope,
   NumericClaim,
   PhraseSearch,
+  ProphetDetail,
+  Prophets,
   RareWord,
   RepeatedVerses,
   RootTree,
@@ -101,6 +103,11 @@ export const api = {
     request<DivineNameDetail>(
       `/analytics/divine-names/${encodeURIComponent(id)}/`,
     ),
+
+  prophets: () => request<Prophets>(`/analytics/prophets/`),
+
+  prophet: (id: string) =>
+    request<ProphetDetail>(`/analytics/prophets/${encodeURIComponent(id)}/`),
 
   phraseSearch: (q: string) =>
     request<PhraseSearch>(`/analytics/phrase/?q=${encodeURIComponent(q)}`),
