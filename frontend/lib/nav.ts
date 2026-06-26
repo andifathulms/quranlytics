@@ -88,6 +88,11 @@ export const NAV_GROUPS: NavGroup[] = [
         description: "The Asmā' al-Ḥusnā — roots, occurrences, and verses.",
       },
       {
+        href: "/explore/prophets",
+        label: "Prophets",
+        description: "The 25 prophets — verses that name and refer to each.",
+      },
+      {
         href: "/explore",
         label: "Miracle Facts",
         description: "Documented patterns verified against live data.",

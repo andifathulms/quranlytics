@@ -173,6 +173,46 @@ export interface Cooccurrence {
   verses: Verse[];
 }
 
+export interface ProphetSummary {
+  id: string;
+  order: number;
+  arabic: string;
+  transliteration: string;
+  name_en: string;
+  name_id: string;
+  blurb_en: string;
+  direct_count: number;
+  epithet_count: number;
+}
+
+export interface Prophets {
+  prophets: ProphetSummary[];
+  methodology: string;
+}
+
+export interface ProphetReference {
+  label_en: string;
+  arabic: string;
+  count: number;
+  verses: Verse[];
+}
+
+export interface ProphetDetail {
+  available: boolean;
+  id: string;
+  order: number;
+  arabic: string;
+  transliteration: string;
+  name_en: string;
+  name_id: string;
+  blurb_en: string;
+  methodology: string;
+  direct_total: number;
+  direct_per_surah: { surah_id: number; surah_name: string; count: number }[];
+  direct_verses: Verse[];
+  references: ProphetReference[];
+}
+
 export interface PhraseSearch {
   phrase: string;
   count: number;

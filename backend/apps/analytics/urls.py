@@ -19,6 +19,8 @@ urlpatterns = [
     path("verify-claim/", views.verify_claim_view, name="verify-claim"),
     path("divine-names/", views.divine_names_view, name="divine-names"),
     path("divine-names/<str:name_id>/", views.divine_name_view, name="divine-name"),
+    path("prophets/", views.prophets_view, name="prophets"),
+    path("prophets/<str:prophet_id>/", views.prophet_view, name="prophet"),
     # Phase 3 structural tools
     path(
         "verse-lengths/<int:surah_id>/",
