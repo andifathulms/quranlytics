@@ -670,28 +670,124 @@ def get_divine_name(name_id: str, verse_limit: int = 50) -> dict[str, Any]:
     return result
 
 
-def verify_numeric_claim(word: str, expected_count: int) -> dict[str, Any]:
-    """Verify a popular numeric claim (e.g. 'يوم appears 365 times').
+def _lemma_total(lemma: str) -> int:
+    """Word-family occurrence count from the materialised frequency cache."""
+    freq = WordFrequency.objects.filter(
+        root__isnull=True, lemma=normalize_search(lemma)
+    ).first()
+    return freq.total_count if freq else 0
 
-    Counts surface-form occurrences of the word across the Quran and reports
-    whether it matches the claimed figure, with sample verses.
+
+def get_numeric_claims() -> dict[str, Any]:
+    """Curated library of popular numeric claims with live word-family counts.
+
+    Each term's ``count`` is read from the materialised cache (one batched
+    query). The ``verdict`` and ``note`` are curated scholarly assessments; the
+    live count is the transparent datum the reader checks them against.
+    """
+    from apps.analytics.numeric_claims_data import (
+        CATEGORIES,
+        CLAIMS,
+        METHODOLOGY_NOTE,
+    )
+
+    lemmas = {
+        normalize_search(t["lemma"]) for c in CLAIMS for t in c["terms"]
+    }
+    totals = dict(
+        WordFrequency.objects.filter(
+            root__isnull=True, lemma__in=lemmas
+        ).values_list("lemma", "total_count")
+    )
+
+    claims = [
+        {
+            "id": c["id"],
+            "category": c["category"],
+            "title": c["title"],
+            "claim_en": c["claim_en"],
+            "claimed_display": c["claimed_display"],
+            "verdict": c["verdict"],
+            "note_en": c["note_en"],
+            "terms": [
+                {
+                    "label": t["label"],
+                    "lemma": normalize_search(t["lemma"]),
+                    "count": totals.get(normalize_search(t["lemma"]), 0),
+                }
+                for t in c["terms"]
+            ],
+        }
+        for c in CLAIMS
+    ]
+    return {
+        "claims": claims,
+        "categories": CATEGORIES,
+        "methodology": METHODOLOGY_NOTE,
+    }
+
+
+def get_numeric_claim(claim_id: str, verse_limit: int = 40) -> dict[str, Any]:
+    """Detail for one claim: live per-term counts + sample verses per term."""
+    from apps.analytics.numeric_claims_data import CLAIMS, METHODOLOGY_NOTE
+
+    entry = next((c for c in CLAIMS if c["id"] == claim_id), None)
+    if entry is None:
+        return {"available": False}
+
+    from apps.quran.serializers import VerseSerializer
+
+    terms = []
+    for t in entry["terms"]:
+        needle = normalize_search(t["lemma"])
+        verses = (
+            Verse.objects.filter(words__lemma=needle)
+            .select_related("surah")
+            .prefetch_related("translations")
+            .distinct()
+            .order_by("surah__number", "number")
+        )
+        terms.append(
+            {
+                "label": t["label"],
+                "lemma": needle,
+                "count": _lemma_total(needle),
+                "verse_total": verses.count(),
+                "verses": VerseSerializer(verses[:verse_limit], many=True).data,
+            }
+        )
+
+    return {
+        "available": True,
+        "id": entry["id"],
+        "category": entry["category"],
+        "title": entry["title"],
+        "claim_en": entry["claim_en"],
+        "claimed_display": entry["claimed_display"],
+        "verdict": entry["verdict"],
+        "note_en": entry["note_en"],
+        "methodology": METHODOLOGY_NOTE,
+        "terms": terms,
+    }
+
+
+def verify_numeric_claim(word: str, expected_count: int) -> dict[str, Any]:
+    """Verify an ad-hoc numeric claim (e.g. 'يوم appears 365 times').
+
+    Counts the word-family (lemma) from the materialised frequency cache — the
+    morphologically honest total — and lists sample verses where it occurs.
     """
     needle = normalize_search(word)
-    matches = (
-        Word.objects.filter(
-            Q(lemma=needle) | Q(arabic__icontains=word)
-        )
-        .select_related("verse__surah")
-        .order_by("verse__surah__number", "verse__number")
+    actual = _lemma_total(needle)
+    verse_keys = list(
+        Verse.objects.filter(words__lemma=needle)
+        .order_by("surah__number", "number")
+        .values_list("surah__number", "number")[:50]
     )
-    actual = matches.count()
-    verses = list(
-        dict.fromkeys(m.verse.key for m in matches[:50])
-    )  # de-dup, cap at 50
     return {
         "word": word,
         "claimed": expected_count,
         "actual": actual,
         "verified": actual == expected_count,
-        "verses": verses,
+        "verses": [f"{s}:{n}" for s, n in verse_keys],
     }

@@ -7,6 +7,8 @@ import type {
   DivineNames,
   Envelope,
   NumericClaim,
+  NumericClaimDetail,
+  NumericClaims,
   PhraseSearch,
   ProphetDetail,
   Prophets,
@@ -151,6 +153,11 @@ export const api = {
 
   themeVerses: (clusterId: number) =>
     request<Verse[]>(`/semantic/themes/${clusterId}/`),
+
+  numericClaims: () => request<NumericClaims>(`/analytics/claims/`),
+
+  numericClaim: (id: string) =>
+    request<NumericClaimDetail>(`/analytics/claims/${encodeURIComponent(id)}/`),
 
   verifyClaim: (word: string, expected: number) =>
     request<NumericClaim>(
