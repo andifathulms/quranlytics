@@ -1,0 +1,79 @@
+# Production stack — runs on the VM with NO source code present.
+# Backend/frontend images are pulled from GHCR (built by CI on push to main).
+#
+#   export IMAGE_OWNER=andifathulms          # your GitHub owner (lowercase)
+#   export TAG=latest                         # or a specific commit SHA
+#   docker compose -f docker-compose.prod.yml --env-file .env pull
+#   docker compose -f docker-compose.prod.yml --env-file .env up -d
+#
+# First-time data seed + full runbook: see DEPLOYMENT.md.
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-quranlytics}
+      POSTGRES_USER: ${POSTGRES_USER:-quran}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-quran} -d ${POSTGRES_DB:-quranlytics}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+
+  backend:
+    image: ghcr.io/${IMAGE_OWNER}/quranlytics-backend:${TAG:-latest}
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/api/v1/health/"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+  celery:
+    image: ghcr.io/${IMAGE_OWNER}/quranlytics-backend:${TAG:-latest}
+    restart: unless-stopped
+    command: celery -A config worker -l info
+    env_file: .env
+    depends_on:
+      - redis
+      - db
+
+  celery-beat:
+    image: ghcr.io/${IMAGE_OWNER}/quranlytics-backend:${TAG:-latest}
+    restart: unless-stopped
+    command: celery -A config beat -l info --schedule /tmp/celerybeat-schedule
+    env_file: .env
+    depends_on:
+      - redis
+      - db
+
+  frontend:
+    image: ghcr.io/${IMAGE_OWNER}/quranlytics-frontend:${TAG:-latest}
+    restart: unless-stopped
+    env_file: .env
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres_data:
+  redis_data:
