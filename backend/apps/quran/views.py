@@ -85,6 +85,27 @@ class SurahVersesView(ListAPIView):
         )
 
 
+class JuzVersesView(ListAPIView):
+    """GET /juz/{n}/verses/ — all verses of a juzʾ (1–30), across surahs."""
+
+    serializer_class = VerseSerializer
+    pagination_class = None  # a juzʾ is bounded; return them all
+
+    def get_queryset(self):
+        return (
+            Verse.objects.filter(juz_number=self.kwargs["number"])
+            .select_related("surah")
+            .prefetch_related(
+                Prefetch("translations", queryset=Translation.objects.all())
+            )
+            .order_by("surah__number", "number")
+        )
+
+    def list(self, request, *args, **kwargs):
+        data = self.get_serializer(self.get_queryset(), many=True).data
+        return envelope(data, meta={"count": len(data)})
+
+
 class VerseWordsView(ListAPIView):
     """GET /verses/{id}/words/ — word-level morphology breakdown."""
 

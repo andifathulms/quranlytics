@@ -107,10 +107,17 @@ export interface Discovery {
   updated_at: string;
 }
 
+export interface ProfileReading {
+  streak: number;
+  longest_streak: number;
+  completed_count: number;
+}
+
 export interface Profile {
   username: string;
   discovery_count: number;
   total_score: number;
+  reading: ProfileReading | null;
   discoveries: Discovery[];
 }
 

@@ -59,6 +59,7 @@ class ReadingStateSerializer(serializers.ModelSerializer):
     completed_count = serializers.SerializerMethodField()
     today_ayahs = serializers.SerializerMethodField()
     goal_met = serializers.SerializerMethodField()
+    streak_count = serializers.SerializerMethodField()
 
     class Meta:
         model = ReadingState
@@ -90,6 +91,9 @@ class ReadingStateSerializer(serializers.ModelSerializer):
     def get_goal_met(self, obj: ReadingState) -> bool:
         return obj.daily_goal > 0 and self._today_ayahs(obj) >= obj.daily_goal
 
+    def get_streak_count(self, obj: ReadingState) -> int:
+        return effective_streak(obj)
+
     def get_last_verse_key(self, obj: ReadingState) -> str | None:
         if obj.last_surah and obj.last_verse:
             return f"{obj.last_surah}:{obj.last_verse}"
@@ -106,3 +110,18 @@ class ReadingStateSerializer(serializers.ModelSerializer):
             for num, furthest in (obj.progress or {}).items()
             if furthest >= counts.get(int(num), 10**9)
         )
+
+
+def effective_streak(state: ReadingState) -> int:
+    """Stored streak only counts if the last read was today or yesterday;
+    otherwise the run has lapsed and the current streak is 0."""
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    if (
+        state.last_read_date
+        and state.last_read_date >= timezone.localdate() - timedelta(days=1)
+    ):
+        return state.streak_count
+    return 0

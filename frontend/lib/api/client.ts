@@ -80,6 +80,8 @@ export const api = {
 
   getVerse: (id: number) => request<Verse>(`/verses/${id}/`),
 
+  getJuzVerses: (n: number) => request<Verse[]>(`/juz/${n}/verses/`),
+
   search: (q: string, lang: "ar" | "en" | "id" = "ar") =>
     request<Verse[]>(`/search/?q=${encodeURIComponent(q)}&lang=${lang}`),
 

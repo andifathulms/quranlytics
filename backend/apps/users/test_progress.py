@@ -93,3 +93,15 @@ class TestDailyGoal:
         c.post("/api/v1/progress/", {"surah": 1, "verse": 5}, format="json")
         res = c.post("/api/v1/progress/", {"surah": 1, "verse": 3}, format="json")
         assert res.json()["data"]["today_ayahs"] == 5
+
+    def test_streak_lapses_to_zero_after_a_gap(self, auth_client):
+        from apps.users.models import ReadingState
+
+        c, user = auth_client
+        c.post("/api/v1/progress/", {"surah": 1, "verse": 1}, format="json")
+        # Last read 5 days ago → the displayed streak should read 0.
+        ReadingState.objects.filter(user=user).update(
+            last_read_date=timezone.localdate() - timedelta(days=5),
+            streak_count=9,
+        )
+        assert c.get("/api/v1/progress/").json()["data"]["streak_count"] == 0
