@@ -23,6 +23,8 @@ export function ReaderVerses({
   const [on, setOn] = useState(false);
   const [data, setData] = useState<SurahTajwid | null>(null);
   const [loading, setLoading] = useState(false);
+  const [memorize, setMemorize] = useState(false);
+  const [hideText, setHideText] = useState(false);
 
   useEffect(() => {
     setOn(
@@ -79,10 +81,25 @@ export function ReaderVerses({
         >
           🎨 Tajwīd colours {on ? "on" : "off"}
         </button>
+        <button
+          onClick={() => setMemorize((m) => !m)}
+          aria-pressed={memorize}
+          className={`rounded-lg border px-3 py-1.5 text-sm transition-colors ${
+            memorize
+              ? "border-waraq bg-waraq/15 text-waraq"
+              : "border-sand text-lapis/70 hover:text-lapis dark:text-parchment/70"
+          }`}
+        >
+          🧠 Memorize {memorize ? "on" : "off"}
+        </button>
         {on && loading && (
           <span className="text-xs text-muted">Loading colours…</span>
         )}
       </div>
+
+      {memorize && (
+        <HifzControls hideText={hideText} setHideText={setHideText} />
+      )}
 
       {active && (
         <div className="mb-4 space-y-2">
@@ -112,10 +129,79 @@ export function ReaderVerses({
             verse={v}
             tajwid={active ? segmentsByKey[v.verse_key] : undefined}
             ruleColors={active ? ruleColors : undefined}
+            hidden={memorize && hideText}
           />
         ))}
       </section>
     </ReaderAudioProvider>
+  );
+}
+
+const REPEAT_OPTIONS: { label: string; value: number }[] = [
+  { label: "×1", value: 1 },
+  { label: "×3", value: 3 },
+  { label: "×5", value: 5 },
+  { label: "loop", value: Infinity },
+];
+
+// Ḥifẓ controls: how many times each verse repeats before advancing, whether to
+// loop the surah, and whether to hide the text for self-testing.
+function HifzControls({
+  hideText,
+  setHideText,
+}: {
+  hideText: boolean;
+  setHideText: (v: boolean) => void;
+}) {
+  const { repeat, setRepeat, loopSurah, setLoopSurah } = useReaderAudio();
+
+  // Leaving memorize mode restores normal playback (these live in the
+  // session-persistent audio context, so reset them on unmount).
+  useEffect(() => {
+    return () => {
+      setRepeat(1);
+      setLoopSurah(false);
+      setHideText(false);
+    };
+  }, [setRepeat, setLoopSurah, setHideText]);
+
+  return (
+    <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg border border-waraq/40 bg-waraq/5 px-3 py-2 text-sm">
+      <span className="text-xs font-semibold uppercase tracking-wide text-muted">
+        Repeat each verse
+      </span>
+      <div className="flex gap-1">
+        {REPEAT_OPTIONS.map((o) => (
+          <button
+            key={o.label}
+            onClick={() => setRepeat(o.value)}
+            className={`rounded px-2 py-1 text-xs transition-colors ${
+              repeat === o.value
+                ? "bg-waraq/30 text-waraq"
+                : "text-lapis/60 hover:bg-waraq/15 dark:text-parchment/60"
+            }`}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+      <label className="flex items-center gap-1.5 text-xs text-muted">
+        <input
+          type="checkbox"
+          checked={loopSurah}
+          onChange={(e) => setLoopSurah(e.target.checked)}
+        />
+        Loop surah
+      </label>
+      <label className="flex items-center gap-1.5 text-xs text-muted">
+        <input
+          type="checkbox"
+          checked={hideText}
+          onChange={(e) => setHideText(e.target.checked)}
+        />
+        Hide text (tap a verse to reveal)
+      </label>
+    </div>
   );
 }
 
