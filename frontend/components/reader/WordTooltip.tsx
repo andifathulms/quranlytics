@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
 
 import { ArabicText } from "@/components/ui/ArabicText";
 import { wordAudioUrl } from "@/lib/audio";
@@ -26,6 +27,13 @@ export function WordTooltip({
       () => {},
     );
   }
+
+  // Auto-play the word's recitation when the tooltip opens (the tap is the
+  // user gesture browsers require). Re-fires for each newly tapped word.
+  useEffect(() => {
+    playWord();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [word.id]);
   // If this word is a divine name or a prophet, offer a jump to its explorer.
   const links = useLemmaLinks();
   const lemma = word.lemma || "";

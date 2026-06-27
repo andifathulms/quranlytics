@@ -2,14 +2,15 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
-import { ArabicText } from "@/components/ui/ArabicText";
 import { api } from "@/lib/api/client";
 import type { SurahTajwid, TajwidSegment, Verse } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { RECITERS } from "@/lib/audio";
+import { usePersistentToggle } from "@/lib/hooks/usePersistentToggle";
 import { useToast } from "@/lib/toast/ToastContext";
 
 import { ReaderAudioProvider, useReaderAudio } from "./ReaderAudio";
+import { READING_MODE_KEY, ReadingFlow } from "./ReadingFlow";
 import { VerseRow } from "./VerseRow";
 
 const STORAGE_KEY = "quranlytics:tajwid";
@@ -28,7 +29,7 @@ export function ReaderVerses({
   const [loading, setLoading] = useState(false);
   const [memorize, setMemorize] = useState(false);
   const [hideText, setHideText] = useState(false);
-  const [reading, setReading] = useState(false);
+  const [reading, toggleReading] = usePersistentToggle(READING_MODE_KEY);
 
   // This surah's reading progress (for the header), and a one-time nudge when
   // the daily goal is reached while reading.
@@ -109,7 +110,7 @@ export function ReaderVerses({
         <AudioControls />
         <span className="mx-1 hidden h-4 w-px bg-sand sm:inline-block" />
         <button
-          onClick={() => setReading((r) => !r)}
+          onClick={toggleReading}
           aria-pressed={reading}
           className={`rounded-lg border px-3 py-1.5 text-sm transition-colors ${
             reading
@@ -191,33 +192,6 @@ export function ReaderVerses({
         </section>
       )}
     </ReaderAudioProvider>
-  );
-}
-
-const AR_DIGITS = "٠١٢٣٤٥٦٧٨٩";
-const toArabicNumber = (n: number) =>
-  String(n)
-    .split("")
-    .map((d) => AR_DIGITS[Number(d)] ?? d)
-    .join("");
-
-// Reading mode: the surah as one continuous RTL Arabic flow, each ayah followed
-// by its number in an ornament — no translations, toolbars, or row breaks. The
-// Uthmani text is rendered verbatim (a marker is appended, never inserted).
-function ReadingFlow({ verses }: { verses: Verse[] }) {
-  return (
-    <div dir="rtl" className="rounded-lg bg-surface px-5 py-8 text-right">
-      <ArabicText className="block text-3xl leading-[2.7] text-fg">
-        {verses.map((v) => (
-          <span key={v.id}>
-            {v.text_uthmani}
-            <span className="mx-1.5 inline-flex h-8 w-8 items-center justify-center rounded-full border border-waraq align-middle text-base text-waraq">
-              {toArabicNumber(v.number)}
-            </span>{" "}
-          </span>
-        ))}
-      </ArabicText>
-    </div>
   );
 }
 

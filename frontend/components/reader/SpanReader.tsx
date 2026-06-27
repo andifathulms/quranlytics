@@ -1,9 +1,11 @@
 "use client";
 
 import { RECITERS } from "@/lib/audio";
+import { usePersistentToggle } from "@/lib/hooks/usePersistentToggle";
 import type { Verse } from "@/lib/api/types";
 
 import { ReaderAudioProvider, useReaderAudio } from "./ReaderAudio";
+import { READING_MODE_KEY, ReadingFlow } from "./ReadingFlow";
 import { VerseRow } from "./VerseRow";
 
 // A reader for an arbitrary span of verses (a juzʾ or a mushaf page), which may
@@ -16,16 +18,33 @@ export function SpanReader({
   verses: Verse[];
   label?: string;
 }) {
+  const [reading, toggleReading] = usePersistentToggle(READING_MODE_KEY);
+
   return (
     <ReaderAudioProvider verses={verses}>
       <div className="mb-4 flex flex-wrap items-center gap-2 border-b border-sand pb-3 dark:border-khatulistiwa/30">
         <AudioControls label={label} />
+        <button
+          onClick={toggleReading}
+          aria-pressed={reading}
+          className={`rounded-lg border px-3 py-1.5 text-sm transition-colors ${
+            reading
+              ? "border-waraq bg-waraq/15 text-waraq"
+              : "border-sand text-lapis/70 hover:text-lapis dark:text-parchment/70"
+          }`}
+        >
+          📖 Reading mode {reading ? "on" : "off"}
+        </button>
       </div>
-      <section>
-        {verses.map((v) => (
-          <VerseRow key={v.id} verse={v} />
-        ))}
-      </section>
+      {reading ? (
+        <ReadingFlow verses={verses} />
+      ) : (
+        <section>
+          {verses.map((v) => (
+            <VerseRow key={v.id} verse={v} />
+          ))}
+        </section>
+      )}
     </ReaderAudioProvider>
   );
 }
