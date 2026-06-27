@@ -1,34 +1,25 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { ScoredVerseList } from "@/components/semantic/ScoredVerseList";
 import { api, ApiError } from "@/lib/api/client";
 import type { ScoredVerse, Tafsir, Verse } from "@/lib/api/types";
-import { verseAudioUrl } from "@/lib/audio";
 import { useAuth } from "@/lib/auth/AuthContext";
+
+import { useReaderAudio } from "./ReaderAudio";
 
 type Panel = "none" | "note" | "tafsir" | "related";
 
 export function VerseToolbar({ verse }: { verse: Verse }) {
   const { user, bookmarks, notes, toggleBookmark, saveNote, removeNote } = useAuth();
+  const audio = useReaderAudio();
   const [panel, setPanel] = useState<Panel>("none");
-  const [playing, setPlaying] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const bookmarked = bookmarks.has(verse.id);
   const note = notes.get(verse.id);
-
-  function toggleAudio() {
-    const el = audioRef.current;
-    if (!el) return;
-    if (playing) {
-      el.pause();
-    } else {
-      void el.play();
-    }
-  }
+  const isPlaying = audio.currentId === verse.id && audio.playing;
 
   const btn =
     "rounded px-2 py-1 text-xs text-lapis/60 hover:bg-waraq/20 hover:text-lapis dark:text-parchment/60 dark:hover:text-parchment";
@@ -52,9 +43,13 @@ export function VerseToolbar({ verse }: { verse: Verse }) {
           </Link>
         )}
 
-        {/* Audio */}
-        <button onClick={toggleAudio} className={btn} title="Play recitation">
-          {playing ? "❚❚ Pause" : "▶ Listen"}
+        {/* Audio — shares the surah-wide player (continuous from here). */}
+        <button
+          onClick={() => audio.toggle(verse.id)}
+          className={btn}
+          title="Play recitation"
+        >
+          {isPlaying ? "❚❚ Pause" : "▶ Listen"}
         </button>
 
         {/* Note */}
@@ -89,15 +84,6 @@ export function VerseToolbar({ verse }: { verse: Verse }) {
         >
           🔗 Related
         </button>
-
-        <audio
-          ref={audioRef}
-          src={verseAudioUrl(verse.surah_number, verse.number)}
-          preload="none"
-          onPlay={() => setPlaying(true)}
-          onPause={() => setPlaying(false)}
-          onEnded={() => setPlaying(false)}
-        />
       </div>
 
       {panel === "note" && user && (
