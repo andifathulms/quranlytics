@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { ArabicText } from "@/components/ui/ArabicText";
 import { api } from "@/lib/api/client";
 import type { SurahTajwid, TajwidSegment, Verse } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/AuthContext";
@@ -27,6 +28,7 @@ export function ReaderVerses({
   const [loading, setLoading] = useState(false);
   const [memorize, setMemorize] = useState(false);
   const [hideText, setHideText] = useState(false);
+  const [reading, setReading] = useState(false);
 
   // This surah's reading progress (for the header), and a one-time nudge when
   // the daily goal is reached while reading.
@@ -107,37 +109,52 @@ export function ReaderVerses({
         <AudioControls />
         <span className="mx-1 hidden h-4 w-px bg-sand sm:inline-block" />
         <button
-          onClick={toggle}
-          aria-pressed={on}
+          onClick={() => setReading((r) => !r)}
+          aria-pressed={reading}
           className={`rounded-lg border px-3 py-1.5 text-sm transition-colors ${
-            on
+            reading
               ? "border-waraq bg-waraq/15 text-waraq"
               : "border-sand text-lapis/70 hover:text-lapis dark:text-parchment/70"
           }`}
         >
-          🎨 Tajwīd colours {on ? "on" : "off"}
+          📖 Reading mode {reading ? "on" : "off"}
         </button>
-        <button
-          onClick={() => setMemorize((m) => !m)}
-          aria-pressed={memorize}
-          className={`rounded-lg border px-3 py-1.5 text-sm transition-colors ${
-            memorize
-              ? "border-waraq bg-waraq/15 text-waraq"
-              : "border-sand text-lapis/70 hover:text-lapis dark:text-parchment/70"
-          }`}
-        >
-          🧠 Memorize {memorize ? "on" : "off"}
-        </button>
+        {!reading && (
+          <>
+            <button
+              onClick={toggle}
+              aria-pressed={on}
+              className={`rounded-lg border px-3 py-1.5 text-sm transition-colors ${
+                on
+                  ? "border-waraq bg-waraq/15 text-waraq"
+                  : "border-sand text-lapis/70 hover:text-lapis dark:text-parchment/70"
+              }`}
+            >
+              🎨 Tajwīd colours {on ? "on" : "off"}
+            </button>
+            <button
+              onClick={() => setMemorize((m) => !m)}
+              aria-pressed={memorize}
+              className={`rounded-lg border px-3 py-1.5 text-sm transition-colors ${
+                memorize
+                  ? "border-waraq bg-waraq/15 text-waraq"
+                  : "border-sand text-lapis/70 hover:text-lapis dark:text-parchment/70"
+              }`}
+            >
+              🧠 Memorize {memorize ? "on" : "off"}
+            </button>
+          </>
+        )}
         {on && loading && (
           <span className="text-xs text-muted">Loading colours…</span>
         )}
       </div>
 
-      {memorize && (
+      {!reading && memorize && (
         <HifzControls hideText={hideText} setHideText={setHideText} />
       )}
 
-      {active && (
+      {!reading && active && (
         <div className="mb-4 space-y-2">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
             {data!.legend.map((r) => (
@@ -158,18 +175,49 @@ export function ReaderVerses({
         </div>
       )}
 
-      <section>
-        {verses.map((v) => (
-          <VerseRow
-            key={v.id}
-            verse={v}
-            tajwid={active ? segmentsByKey[v.verse_key] : undefined}
-            ruleColors={active ? ruleColors : undefined}
-            hidden={memorize && hideText}
-          />
-        ))}
-      </section>
+      {reading ? (
+        <ReadingFlow verses={verses} />
+      ) : (
+        <section>
+          {verses.map((v) => (
+            <VerseRow
+              key={v.id}
+              verse={v}
+              tajwid={active ? segmentsByKey[v.verse_key] : undefined}
+              ruleColors={active ? ruleColors : undefined}
+              hidden={memorize && hideText}
+            />
+          ))}
+        </section>
+      )}
     </ReaderAudioProvider>
+  );
+}
+
+const AR_DIGITS = "٠١٢٣٤٥٦٧٨٩";
+const toArabicNumber = (n: number) =>
+  String(n)
+    .split("")
+    .map((d) => AR_DIGITS[Number(d)] ?? d)
+    .join("");
+
+// Reading mode: the surah as one continuous RTL Arabic flow, each ayah followed
+// by its number in an ornament — no translations, toolbars, or row breaks. The
+// Uthmani text is rendered verbatim (a marker is appended, never inserted).
+function ReadingFlow({ verses }: { verses: Verse[] }) {
+  return (
+    <div dir="rtl" className="rounded-lg bg-surface px-5 py-8 text-right">
+      <ArabicText className="block text-3xl leading-[2.7] text-fg">
+        {verses.map((v) => (
+          <span key={v.id}>
+            {v.text_uthmani}
+            <span className="mx-1.5 inline-flex h-8 w-8 items-center justify-center rounded-full border border-waraq align-middle text-base text-waraq">
+              {toArabicNumber(v.number)}
+            </span>{" "}
+          </span>
+        ))}
+      </ArabicText>
+    </div>
   );
 }
 

@@ -3,6 +3,7 @@
 import Link from "next/link";
 
 import { ArabicText } from "@/components/ui/ArabicText";
+import { wordAudioUrl } from "@/lib/audio";
 import { useLemmaLinks } from "@/lib/hooks/useLemmaLinks";
 import type { Word } from "@/lib/api/types";
 
@@ -11,11 +12,20 @@ import type { Word } from "@/lib/api/types";
 // Popover/bottom-sheet (see VerseRow), so it owns no positioning of its own.
 export function WordTooltip({
   word,
+  surahNumber,
+  ayahNumber,
   onClose,
 }: {
   word: Word;
+  surahNumber: number;
+  ayahNumber: number;
   onClose: () => void;
 }) {
+  function playWord() {
+    new Audio(wordAudioUrl(surahNumber, ayahNumber, word.position)).play().catch(
+      () => {},
+    );
+  }
   // If this word is a divine name or a prophet, offer a jump to its explorer.
   const links = useLemmaLinks();
   const lemma = word.lemma || "";
@@ -34,6 +44,13 @@ export function WordTooltip({
           <span aria-hidden="true">×</span>
         </button>
       </div>
+      <button
+        onClick={playWord}
+        className="mt-1 inline-flex items-center gap-1 rounded text-xs text-khatulistiwa hover:underline"
+        title="Play this word"
+      >
+        🔊 Play word
+      </button>
       {word.transliteration && (
         <div className="mt-1 text-sm italic text-muted">
           {word.transliteration}

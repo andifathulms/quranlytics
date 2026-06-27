@@ -39,3 +39,15 @@ export function verseAudioUrl(
   const a = String(ayah).padStart(3, "0");
   return `https://everyayah.com/data/${folder}/${s}${a}.mp3`;
 }
+
+// Word-by-word recitation (quran.com CDN): {surah}_{ayah}_{wordPosition}.mp3.
+export function wordAudioUrl(
+  surah: number,
+  ayah: number,
+  position: number,
+): string {
+  const s = String(surah).padStart(3, "0");
+  const a = String(ayah).padStart(3, "0");
+  const w = String(position).padStart(3, "0");
+  return `https://audio.qurancdn.com/wbw/${s}_${a}_${w}.mp3`;
+}
