@@ -5,13 +5,23 @@ import { useRef, useState } from "react";
 import { ArabicText } from "@/components/ui/ArabicText";
 import { Popover } from "@/components/ui/Popover";
 import { api } from "@/lib/api/client";
-import type { Verse, Word } from "@/lib/api/types";
+import type { TajwidSegment, Verse, Word } from "@/lib/api/types";
 
 import { VerseToolbar } from "./VerseToolbar";
 import { WordTooltip } from "./WordTooltip";
 
 // One verse: clickable Arabic words (RTL) on top, EN + ID translations below.
-export function VerseRow({ verse }: { verse: Verse }) {
+// When `tajwid` segments are supplied, the Arabic is rendered as colour-coded
+// spans instead of per-word buttons (the two modes are mutually exclusive).
+export function VerseRow({
+  verse,
+  tajwid,
+  ruleColors,
+}: {
+  verse: Verse;
+  tajwid?: TajwidSegment[];
+  ruleColors?: Record<string, string>;
+}) {
   const [words, setWords] = useState<Word[] | null>(verse.words ?? null);
   const [activeId, setActiveId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
@@ -43,13 +53,24 @@ export function VerseRow({ verse }: { verse: Verse }) {
         </span>
       </div>
 
-      {/* Arabic — RTL, words clickable for the morphology tooltip. */}
+      {/* Arabic — RTL. Colour-coded (tajwīd) spans, or clickable words. */}
       <div
         dir="rtl"
         className="flex flex-wrap justify-end gap-x-2 gap-y-3 text-right"
-        onMouseEnter={ensureWords}
+        onMouseEnter={tajwid ? undefined : ensureWords}
       >
-        {words && words.length > 0 ? (
+        {tajwid ? (
+          <ArabicText className="text-3xl leading-loose">
+            {tajwid.map((s, i) => (
+              <span
+                key={i}
+                style={s.rule ? { color: ruleColors?.[s.rule] } : undefined}
+              >
+                {s.text}
+              </span>
+            ))}
+          </ArabicText>
+        ) : words && words.length > 0 ? (
           words.map((w) => (
             <button
               key={w.id}

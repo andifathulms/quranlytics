@@ -20,6 +20,7 @@ import type {
   Surah,
   SurahPair,
   SurahStatRow,
+  SurahTajwid,
   Tafsir,
   ThemeSummary,
   Verse,
@@ -108,6 +109,9 @@ export const api = {
     ),
 
   lemmaLinks: () => request<LemmaLinks>(`/analytics/lemma-links/`),
+
+  surahTajwid: (surahId: number) =>
+    request<SurahTajwid>(`/analytics/tajwid/${surahId}/`),
 
   prophets: () => request<Prophets>(`/analytics/prophets/`),
 

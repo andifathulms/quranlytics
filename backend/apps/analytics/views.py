@@ -166,6 +166,15 @@ def rare_words_view(request):
 
 
 @api_view(["GET"])
+def surah_tajwid_view(request, surah_id: int):
+    return _cached(
+        "surah-tajwid",
+        {"surah_id": surah_id},
+        lambda: services.get_surah_tajwid(surah_id),
+    )
+
+
+@api_view(["GET"])
 def lemma_links_view(request):
     return _cached("lemma-links", {}, services.get_lemma_links)
 

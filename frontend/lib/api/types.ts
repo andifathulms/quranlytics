@@ -213,6 +213,29 @@ export interface ProphetDetail {
   references: ProphetReference[];
 }
 
+export interface TajwidSegment {
+  text: string;
+  rule: string | null;
+}
+
+export interface TajwidVerse {
+  verse_key: string;
+  segments: TajwidSegment[];
+}
+
+export interface TajwidLegendItem {
+  id: string;
+  label_en: string;
+  color: string;
+}
+
+export interface SurahTajwid {
+  available: boolean;
+  surah_id: number;
+  legend: TajwidLegendItem[];
+  verses: TajwidVerse[];
+}
+
 export interface LemmaLink {
   id: string;
   label: string;

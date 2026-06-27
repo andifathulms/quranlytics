@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { VerseRow } from "@/components/reader/VerseRow";
+import { ReaderVerses } from "@/components/reader/ReaderVerses";
 import { ArabicText } from "@/components/ui/ArabicText";
 import { Badge } from "@/components/ui/Card";
 import { api } from "@/lib/api/client";
@@ -77,11 +77,7 @@ export default async function SurahPage({
         </div>
       )}
 
-      <section>
-        {verses.map((v) => (
-          <VerseRow key={v.id} verse={v} />
-        ))}
-      </section>
+      <ReaderVerses surahId={number} verses={verses} />
     </div>
   );
 }
