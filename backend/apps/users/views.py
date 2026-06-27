@@ -123,19 +123,41 @@ class ReadingProgressView(APIView):
 
         progress = state.progress or {}
         key = str(surah)
-        progress[key] = max(int(progress.get(key, 0)), verse)
+        old_furthest = int(progress.get(key, 0))
+        delta = max(0, verse - old_furthest)  # new ground covered
+        progress[key] = max(old_furthest, verse)
         state.progress = progress
 
         today = timezone.localdate()
+        new_day = state.last_read_date != today
         if state.last_read_date == today:
-            pass  # already counted today
+            pass  # streak already counted today
         elif state.last_read_date == today - timedelta(days=1):
             state.streak_count += 1
         else:
             state.streak_count = 1
         state.longest_streak = max(state.longest_streak, state.streak_count)
+        # Daily-goal counter: reset on a new day, then add today's new ayahs.
+        if new_day:
+            state.today_ayahs = 0
+        state.today_ayahs += delta
         state.last_read_date = today
         state.save()
+        return envelope(ReadingStateSerializer(state).data)
+
+    def patch(self, request):
+        """Set the daily reading goal (new ayahs/day; 0 disables it)."""
+        try:
+            goal = int(request.data["daily_goal"])
+        except (KeyError, TypeError, ValueError):
+            return envelope(
+                errors=[{"message": "Provide integer 'daily_goal'."}],
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        goal = max(0, min(goal, 1000))
+        state, _ = ReadingState.objects.get_or_create(user=request.user)
+        state.daily_goal = goal
+        state.save(update_fields=["daily_goal", "updated_at"])
         return envelope(ReadingStateSerializer(state).data)
 
 

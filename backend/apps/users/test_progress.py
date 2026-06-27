@@ -65,3 +65,31 @@ class TestReadingProgress:
         from rest_framework.test import APIClient
 
         assert APIClient().get("/api/v1/progress/").status_code in (401, 403)
+
+
+class TestDailyGoal:
+    def test_patch_sets_goal_clamped(self, auth_client):
+        c, _ = auth_client
+        res = c.patch("/api/v1/progress/", {"daily_goal": 10}, format="json")
+        assert res.status_code == 200
+        assert res.json()["data"]["daily_goal"] == 10
+        assert (
+            c.patch(
+                "/api/v1/progress/", {"daily_goal": 99999}, format="json"
+            ).json()["data"]["daily_goal"]
+            == 1000
+        )
+
+    def test_today_ayahs_counts_new_ground_and_meets_goal(self, auth_client, surah):
+        c, _ = auth_client
+        c.patch("/api/v1/progress/", {"daily_goal": 5}, format="json")
+        res = c.post("/api/v1/progress/", {"surah": 1, "verse": 5}, format="json")
+        d = res.json()["data"]
+        assert d["today_ayahs"] == 5
+        assert d["goal_met"] is True
+
+    def test_rereading_does_not_double_count(self, auth_client, surah):
+        c, _ = auth_client
+        c.post("/api/v1/progress/", {"surah": 1, "verse": 5}, format="json")
+        res = c.post("/api/v1/progress/", {"surah": 1, "verse": 3}, format="json")
+        assert res.json()["data"]["today_ayahs"] == 5
