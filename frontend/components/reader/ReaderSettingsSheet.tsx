@@ -13,7 +13,8 @@ import {
 export function ReaderSettingsSheet() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const { arabicScale, incScale, decScale } = useReaderSettings();
+  const { arabicScale, incScale, decScale, showTranslation, setShowTranslation } =
+    useReaderSettings();
 
   useEffect(() => {
     if (!open) return;
@@ -80,6 +81,20 @@ export function ReaderSettingsSheet() {
               </button>
             </div>
           </div>
+
+          <label className="flex items-center justify-between gap-3 text-sm">
+            <span className="text-fg">Show translation</span>
+            <input
+              type="checkbox"
+              checked={showTranslation}
+              onChange={(e) => setShowTranslation(e.target.checked)}
+              className="h-4 w-4 accent-khatulistiwa"
+            />
+          </label>
+          <p className="-mt-2 text-xs text-muted">
+            In reading mode: show meaning under each page, or tap an ayah to
+            reveal it.
+          </p>
         </div>
       )}
     </div>

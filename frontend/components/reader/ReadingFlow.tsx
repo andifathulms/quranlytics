@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { ArabicText } from "@/components/ui/ArabicText";
+import { Popover } from "@/components/ui/Popover";
 import type { Verse } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/AuthContext";
+import { useReaderSettings } from "@/lib/reader/ReaderSettings";
 
 import { useReaderAudio } from "./ReaderAudio";
 
@@ -32,14 +34,28 @@ function byPage(verses: Verse[]): { page: number; verses: Verse[] }[] {
   return groups;
 }
 
+// English + Indonesian translation of a verse, shown inline (density toggle) or
+// inside the tap-to-reveal popover.
+function VerseMeaning({ verse }: { verse: Verse }) {
+  const en = verse.translations.find((t) => t.language === "en");
+  const id = verse.translations.find((t) => t.language === "id");
+  return (
+    <div className="space-y-1">
+      {en && <p className="text-sm text-fg">{en.text}</p>}
+      {id && <p className="text-sm text-muted">{id.text}</p>}
+    </div>
+  );
+}
+
 // A single ayah within the flowing mushaf. Inline so the text stays continuous,
-// but it owns a ref + observer so that reading in mushaf mode still records the
-// reader's position (streaks, goal, "continue reading") — exactly like the
-// per-verse rows do in normal mode.
-function FlowAyah({ verse }: { verse: Verse }) {
+// but it owns a ref + observer so reading in mushaf mode records the reader's
+// position. When translations aren't shown inline, tapping an ayah reveals its
+// meaning in a popover — progressive disclosure that keeps the mushaf flow.
+function FlowAyah({ verse, tappable }: { verse: Verse; tappable: boolean }) {
   const ref = useRef<HTMLSpanElement | null>(null);
   const { recordRead } = useAuth();
   const { currentId, playing } = useReaderAudio();
+  const [open, setOpen] = useState(false);
   const active = currentId === verse.id;
 
   useEffect(() => {
@@ -66,18 +82,50 @@ function FlowAyah({ verse }: { verse: Verse }) {
   }, [active, playing]);
 
   return (
-    <span
-      ref={ref}
-      id={`${verse.surah_number}-${verse.number}`}
-      className={`scroll-mt-20 rounded transition-colors ${
-        active ? "bg-waraq/20 ring-1 ring-waraq/40" : ""
-      }`}
-    >
-      {verse.text_uthmani}
-      <span className="mx-1.5 inline-flex h-8 w-8 items-center justify-center rounded-full border border-waraq align-middle text-base text-waraq">
-        {toArabicNumber(verse.number)}
-      </span>{" "}
-    </span>
+    <>
+      <span
+        ref={ref}
+        id={`${verse.surah_number}-${verse.number}`}
+        role={tappable ? "button" : undefined}
+        tabIndex={tappable ? 0 : undefined}
+        onClick={tappable ? () => setOpen((o) => !o) : undefined}
+        onKeyDown={
+          tappable
+            ? (e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setOpen((o) => !o);
+                }
+              }
+            : undefined
+        }
+        className={`scroll-mt-20 rounded transition-colors ${
+          tappable ? "cursor-pointer hover:bg-waraq/10" : ""
+        } ${active ? "bg-waraq/20 ring-1 ring-waraq/40" : ""}`}
+        title={tappable ? "Tap for translation" : undefined}
+      >
+        {verse.text_uthmani}
+        <span className="mx-1.5 inline-flex h-8 w-8 items-center justify-center rounded-full border border-waraq align-middle text-base text-waraq">
+          {toArabicNumber(verse.number)}
+        </span>{" "}
+      </span>
+      {tappable && (
+        <Popover
+          open={open}
+          onClose={() => setOpen(false)}
+          anchorRef={ref}
+          label={`Translation of ${verse.verse_key}`}
+          width={360}
+        >
+          <div className="text-left">
+            <div className="mb-1 font-mono text-xs text-muted">
+              {verse.verse_key}
+            </div>
+            <VerseMeaning verse={verse} />
+          </div>
+        </Popover>
+      )}
+    </>
   );
 }
 
@@ -86,6 +134,7 @@ function FlowAyah({ verse }: { verse: Verse }) {
 // end on verse boundaries. The Uthmani text is rendered verbatim; the ayah
 // marker is appended after each verse, never inserted into the text.
 export function ReadingFlow({ verses }: { verses: Verse[] }) {
+  const { showTranslation } = useReaderSettings();
   const pages = byPage(verses);
 
   return (
@@ -100,9 +149,23 @@ export function ReadingFlow({ verses }: { verses: Verse[] }) {
             style={{ textAlignLast: "right" }}
           >
             {pageVerses.map((v) => (
-              <FlowAyah key={v.id} verse={v} />
+              <FlowAyah key={v.id} verse={v} tappable={!showTranslation} />
             ))}
           </ArabicText>
+
+          {showTranslation && (
+            <div className="mt-6 space-y-4 border-t border-sand pt-4 dark:border-khatulistiwa/30">
+              {pageVerses.map((v) => (
+                <div key={v.id} className="flex gap-3">
+                  <span className="mt-0.5 shrink-0 font-mono text-xs text-muted">
+                    {v.verse_key}
+                  </span>
+                  <VerseMeaning verse={v} />
+                </div>
+              ))}
+            </div>
+          )}
+
           <div className="mt-6 border-t border-sand pt-3 text-center text-xs text-muted dark:border-khatulistiwa/30">
             ﴿ {page} ﴾
           </div>
