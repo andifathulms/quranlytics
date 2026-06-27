@@ -33,6 +33,12 @@ export default function DashboardPage() {
         </div>
         <div className="flex gap-2 text-sm">
           <Link
+            href="/saved"
+            className="rounded-lg border border-khatulistiwa px-3 py-1.5 text-khatulistiwa hover:bg-sand/40"
+          >
+            Manage saved
+          </Link>
+          <Link
             href={`/u/${user.username}`}
             className="rounded-lg border border-khatulistiwa px-3 py-1.5 text-khatulistiwa hover:bg-sand/40"
           >

@@ -38,6 +38,18 @@ class TestSurahAPI:
         assert langs == {"en", "id"}
 
 
+class TestJuzAPI:
+    def test_juz_verses(self, api, verse):
+        # The fixture verse 1:2 has juz_number=1.
+        res = api.get("/api/v1/juz/1/verses/")
+        assert res.status_code == 200
+        data = res.json()["data"]
+        assert any(v["verse_key"] == "1:2" for v in data)
+
+    def test_empty_juz(self, api, verse):
+        assert api.get("/api/v1/juz/30/verses/").json()["data"] == []
+
+
 class TestVerseWordsAPI:
     def test_words_breakdown(self, api, words):
         verse_id = words[0].verse_id

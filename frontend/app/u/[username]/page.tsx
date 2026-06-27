@@ -39,9 +39,17 @@ export default function PublicProfilePage() {
     <div className="space-y-6">
       <header className="rounded-xl bg-lapis px-6 py-8 text-parchment">
         <h1 className="font-display text-3xl text-waraq">{profile.username}</h1>
-        <div className="mt-2 flex gap-2">
+        <div className="mt-2 flex flex-wrap gap-2">
           <Badge tone="emerald">{profile.discovery_count} discoveries</Badge>
           <Badge tone="gold">▲ {profile.total_score} total</Badge>
+          {profile.reading && (
+            <>
+              <Badge tone="gold">🔥 {profile.reading.streak}-day streak</Badge>
+              <Badge tone="blue">
+                {profile.reading.completed_count} surahs completed
+              </Badge>
+            </>
+          )}
         </div>
       </header>
 

@@ -15,6 +15,11 @@ urlpatterns = [
         views.SurahVersesView.as_view(),
         name="surah-verses",
     ),
+    path(
+        "juz/<int:number>/verses/",
+        views.JuzVersesView.as_view(),
+        name="juz-verses",
+    ),
     path("verses/<int:pk>/", views.VerseDetailView.as_view(), name="verse-detail"),
     path(
         "verses/<int:pk>/words/",

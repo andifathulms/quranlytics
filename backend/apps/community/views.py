@@ -180,8 +180,31 @@ def profile_view(request, username: str):
             "username": user.username,
             "discovery_count": len(discoveries),
             "total_score": sum(d.vote_score for d in discoveries),
+            "reading": _reading_stats(user),
             "discoveries": DiscoverySerializer(
                 discoveries, many=True, context={"request": request}
             ).data,
         }
     )
+
+
+def _reading_stats(user) -> dict | None:
+    """Public reading stats for a profile: current streak, longest, completed."""
+    from apps.quran.models import Surah
+    from apps.users.models import ReadingState
+    from apps.users.serializers import effective_streak
+
+    state = ReadingState.objects.filter(user=user).first()
+    if state is None:
+        return None
+    counts = dict(Surah.objects.values_list("number", "verse_count"))
+    completed = sum(
+        1
+        for num, furthest in (state.progress or {}).items()
+        if furthest >= counts.get(int(num), 10**9)
+    )
+    return {
+        "streak": effective_streak(state),
+        "longest_streak": state.longest_streak,
+        "completed_count": completed,
+    }

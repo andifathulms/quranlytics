@@ -25,6 +25,11 @@ export const NAV_GROUPS: NavGroup[] = [
         label: "Reader",
         description: "Browse all 114 surahs with translations.",
       },
+      {
+        href: "/juz",
+        label: "By Juzʾ",
+        description: "Read the Quran in its 30 equal parts.",
+      },
     ],
   },
   {
