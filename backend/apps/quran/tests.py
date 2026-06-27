@@ -50,6 +50,14 @@ class TestJuzAPI:
         assert api.get("/api/v1/juz/30/verses/").json()["data"] == []
 
 
+class TestPageAPI:
+    def test_page_verses(self, api, verse):
+        # The fixture verse 1:2 has page_number=1.
+        res = api.get("/api/v1/page/1/verses/")
+        assert res.status_code == 200
+        assert any(v["verse_key"] == "1:2" for v in res.json()["data"])
+
+
 class TestVerseWordsAPI:
     def test_words_breakdown(self, api, words):
         verse_id = words[0].verse_id

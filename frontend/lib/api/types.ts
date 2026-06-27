@@ -233,6 +233,7 @@ export interface ReadingProgress {
   daily_goal: number;
   today_ayahs: number;
   goal_met: boolean;
+  reading_days: string[]; // ISO dates with reading activity
   updated_at: string;
 }
 

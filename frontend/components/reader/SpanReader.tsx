@@ -6,14 +6,20 @@ import type { Verse } from "@/lib/api/types";
 import { ReaderAudioProvider, useReaderAudio } from "./ReaderAudio";
 import { VerseRow } from "./VerseRow";
 
-// A juzʾ spans multiple surahs, so this is a lighter reader than the surah page:
-// continuous recitation + word tooltips + progress recording, but no
-// surah-scoped tajwīd/progress layers.
-export function JuzReader({ verses }: { verses: Verse[] }) {
+// A reader for an arbitrary span of verses (a juzʾ or a mushaf page), which may
+// cross surah boundaries — so it's lighter than the surah page: continuous
+// recitation + word tooltips + progress recording, but no surah-scoped tajwīd.
+export function SpanReader({
+  verses,
+  label = "span",
+}: {
+  verses: Verse[];
+  label?: string;
+}) {
   return (
     <ReaderAudioProvider verses={verses}>
       <div className="mb-4 flex flex-wrap items-center gap-2 border-b border-sand pb-3 dark:border-khatulistiwa/30">
-        <AudioControls />
+        <AudioControls label={label} />
       </div>
       <section>
         {verses.map((v) => (
@@ -24,7 +30,7 @@ export function JuzReader({ verses }: { verses: Verse[] }) {
   );
 }
 
-function AudioControls() {
+function AudioControls({ label }: { label: string }) {
   const { playing, currentId, playSurah, pause, reciterId, setReciterId } =
     useReaderAudio();
   const active = currentId !== null && playing;
@@ -33,9 +39,9 @@ function AudioControls() {
       <button
         onClick={() => (active ? pause() : playSurah())}
         className="rounded-lg border border-khatulistiwa px-3 py-1.5 text-sm text-khatulistiwa hover:bg-sand/40"
-        title={active ? "Pause recitation" : "Play the whole juzʾ"}
+        title={active ? "Pause recitation" : `Play the whole ${label}`}
       >
-        {active ? "❚❚ Pause" : "▶ Play juzʾ"}
+        {active ? "❚❚ Pause" : `▶ Play ${label}`}
       </button>
       <select
         value={reciterId}

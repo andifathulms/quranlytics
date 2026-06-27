@@ -20,6 +20,11 @@ urlpatterns = [
         views.JuzVersesView.as_view(),
         name="juz-verses",
     ),
+    path(
+        "page/<int:number>/verses/",
+        views.PageVersesView.as_view(),
+        name="page-verses",
+    ),
     path("verses/<int:pk>/", views.VerseDetailView.as_view(), name="verse-detail"),
     path(
         "verses/<int:pk>/words/",

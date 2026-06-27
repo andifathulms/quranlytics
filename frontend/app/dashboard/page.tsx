@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
+import { StreakHeatmap } from "@/components/reader/StreakHeatmap";
 import { Badge, Card } from "@/components/ui/Card";
 import { useAuth } from "@/lib/auth/AuthContext";
 
@@ -109,6 +110,10 @@ export default function DashboardPage() {
           met={progress.goal_met}
           onSet={setReadingGoal}
         />
+      )}
+
+      {progress && progress.reading_days.length > 0 && (
+        <StreakHeatmap readingDays={progress.reading_days} />
       )}
 
       <section>

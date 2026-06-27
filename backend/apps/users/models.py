@@ -69,6 +69,8 @@ class ReadingState(models.Model):
     # new ground covered on last_read_date.
     daily_goal = models.IntegerField(default=0)
     today_ayahs = models.IntegerField(default=0)
+    # ISO date strings of recent days with reading activity (for the heatmap).
+    reading_days = models.JSONField(default=list, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self) -> str:
