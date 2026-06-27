@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   SCALE_MAX,
   SCALE_MIN,
+  SPEEDS,
   useReaderSettings,
 } from "@/lib/reader/ReaderSettings";
 
@@ -13,8 +14,15 @@ import {
 export function ReaderSettingsSheet() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const { arabicScale, incScale, decScale, showTranslation, setShowTranslation } =
-    useReaderSettings();
+  const {
+    arabicScale,
+    incScale,
+    decScale,
+    showTranslation,
+    setShowTranslation,
+    playbackRate,
+    setPlaybackRate,
+  } = useReaderSettings();
 
   useEffect(() => {
     if (!open) return;
@@ -95,6 +103,28 @@ export function ReaderSettingsSheet() {
             In reading mode: show meaning under each page, or tap an ayah to
             reveal it.
           </p>
+
+          <div>
+            <div className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted">
+              Recitation speed
+            </div>
+            <div className="flex gap-1">
+              {SPEEDS.map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setPlaybackRate(s)}
+                  aria-pressed={playbackRate === s}
+                  className={`flex-1 rounded-lg border px-1 py-1.5 text-xs tabular-nums transition-colors ${
+                    playbackRate === s
+                      ? "border-waraq bg-waraq/15 text-waraq"
+                      : "border-sand text-muted hover:bg-surface-2"
+                  }`}
+                >
+                  {s}×
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       )}
     </div>

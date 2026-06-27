@@ -12,6 +12,7 @@ import {
 
 import type { Verse } from "@/lib/api/types";
 import { DEFAULT_RECITER, reciterById, verseAudioUrl } from "@/lib/audio";
+import { useReaderSettings } from "@/lib/reader/ReaderSettings";
 
 const STORAGE_KEY = "quranlytics:reciter";
 
@@ -49,6 +50,9 @@ export function ReaderAudioProvider({
   children: React.ReactNode;
 }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const { playbackRate } = useReaderSettings();
+  const rateRef = useRef(playbackRate);
+  rateRef.current = playbackRate;
   const [reciterId, setReciterIdState] = useState(DEFAULT_RECITER.id);
   const [currentId, setCurrentId] = useState<number | null>(null);
   const [playing, setPlaying] = useState(false);
@@ -74,6 +78,11 @@ export function ReaderAudioProvider({
     if (saved) setReciterIdState(saved);
   }, []);
 
+  // Apply speed changes live to the currently-playing recitation.
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.playbackRate = playbackRate;
+  }, [playbackRate]);
+
   const folder = reciterById(reciterId).folder;
 
   const start = useCallback(
@@ -82,6 +91,7 @@ export function ReaderAudioProvider({
       const el = audioRef.current;
       if (!v || !el) return;
       el.src = verseAudioUrl(v.surah_number, v.number, folder);
+      el.playbackRate = rateRef.current;
       playsRef.current = 1;
       setCurrentId(id);
       void el.play();
