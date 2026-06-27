@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { api } from "@/lib/api/client";
 import type { SurahTajwid, TajwidSegment, Verse } from "@/lib/api/types";
+import { useAuth } from "@/lib/auth/AuthContext";
 import { RECITERS } from "@/lib/audio";
+import { useToast } from "@/lib/toast/ToastContext";
 
 import { ReaderAudioProvider, useReaderAudio } from "./ReaderAudio";
 import { VerseRow } from "./VerseRow";
@@ -25,6 +27,26 @@ export function ReaderVerses({
   const [loading, setLoading] = useState(false);
   const [memorize, setMemorize] = useState(false);
   const [hideText, setHideText] = useState(false);
+
+  // This surah's reading progress (for the header), and a one-time nudge when
+  // the daily goal is reached while reading.
+  const { progress } = useAuth();
+  const { toast } = useToast();
+  const total = verses.length;
+  const furthest = progress?.progress?.[String(surahId)] ?? 0;
+  const surahCompleted = furthest >= total && furthest > 0;
+  const surahPct = furthest ? Math.min(100, Math.round((furthest / total) * 100)) : 0;
+
+  const goalMet = progress?.goal_met ?? false;
+  const hasProgress = Boolean(progress);
+  const prevGoalMet = useRef<boolean | null>(null);
+  useEffect(() => {
+    if (!hasProgress) return;
+    if (prevGoalMet.current === false && goalMet) {
+      toast("✓ Daily reading goal reached — bārak Allāhu fīk!", "success");
+    }
+    prevGoalMet.current = goalMet;
+  }, [goalMet, hasProgress, toast]);
 
   useEffect(() => {
     setOn(
@@ -67,6 +89,20 @@ export function ReaderVerses({
 
   return (
     <ReaderAudioProvider verses={verses}>
+      {progress && furthest > 0 && (
+        <div className="mb-4 flex items-center gap-3 text-sm">
+          <span className={surahCompleted ? "text-[#1e7e44] dark:text-emerald" : "text-muted"}>
+            {surahCompleted ? "✓ Completed" : `Ayah ${furthest} of ${total}`}
+          </span>
+          <div className="h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-surface-2">
+            <div
+              className={`h-full rounded-full ${surahCompleted ? "bg-emerald" : "bg-waraq"}`}
+              style={{ width: `${surahPct}%` }}
+            />
+          </div>
+        </div>
+      )}
+
       <div className="mb-4 flex flex-wrap items-center gap-3 border-b border-sand pb-3 dark:border-khatulistiwa/30">
         <AudioControls />
         <span className="mx-1 hidden h-4 w-px bg-sand sm:inline-block" />
