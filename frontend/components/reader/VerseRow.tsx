@@ -88,6 +88,7 @@ export function VerseRow({
   return (
     <article
       ref={articleRef}
+      id={`${verse.surah_number}-${verse.number}`}
       className={`scroll-mt-20 rounded-lg border-b border-sand px-3 py-6 transition-colors dark:border-khatulistiwa/30 ${
         isPlaying ? "bg-waraq/10 ring-1 ring-waraq/40" : ""
       }`}

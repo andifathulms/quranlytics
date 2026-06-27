@@ -14,23 +14,55 @@ const toArabicNumber = (n: number) =>
     .map((d) => AR_DIGITS[Number(d)] ?? d)
     .join("");
 
-// A span of verses (surah, juzʾ, or page) as one continuous RTL Arabic flow,
-// each ayah followed by its number in an ornament — no translations, toolbars,
-// or row breaks. The Uthmani text is rendered verbatim; the marker is appended,
-// never inserted.
+// Group verses into the mushaf pages they belong to. Because every verse carries
+// its printed page_number, each group begins and ends on a verse boundary —
+// reproducing the muṣḥaf rule that a page never breaks in the middle of an ayah.
+function byPage(verses: Verse[]): { page: number; verses: Verse[] }[] {
+  const groups: { page: number; verses: Verse[] }[] = [];
+  for (const v of verses) {
+    const last = groups[groups.length - 1];
+    if (last && last.page === v.page_number) last.verses.push(v);
+    else groups.push({ page: v.page_number, verses: [v] });
+  }
+  return groups;
+}
+
+// A span of verses (surah, juzʾ, or page) laid out like the printed muṣḥaf:
+// continuous RTL Arabic, justified so both margins align, split into pages that
+// end on verse boundaries. The Uthmani text is rendered verbatim; the ayah
+// marker is appended after each verse, never inserted into the text.
 export function ReadingFlow({ verses }: { verses: Verse[] }) {
+  const pages = byPage(verses);
+
   return (
-    <div dir="rtl" className="rounded-lg bg-surface px-5 py-8 text-right">
-      <ArabicText className="block text-3xl leading-[2.7] text-fg">
-        {verses.map((v) => (
-          <span key={v.id}>
-            {v.text_uthmani}
-            <span className="mx-1.5 inline-flex h-8 w-8 items-center justify-center rounded-full border border-waraq align-middle text-base text-waraq">
-              {toArabicNumber(v.number)}
-            </span>{" "}
-          </span>
-        ))}
-      </ArabicText>
+    <div className="space-y-6">
+      {pages.map(({ page, verses: pageVerses }) => (
+        <div
+          key={`${page}-${pageVerses[0]?.id}`}
+          className="rounded-lg border border-sand bg-surface px-5 py-8 shadow-sm dark:border-khatulistiwa/30"
+        >
+          <ArabicText
+            className="block text-justify text-3xl leading-[2.7] text-fg"
+            style={{ textAlignLast: "right" }}
+          >
+            {pageVerses.map((v) => (
+              <span
+                key={v.id}
+                id={`${v.surah_number}-${v.number}`}
+                className="scroll-mt-20"
+              >
+                {v.text_uthmani}
+                <span className="mx-1.5 inline-flex h-8 w-8 items-center justify-center rounded-full border border-waraq align-middle text-base text-waraq">
+                  {toArabicNumber(v.number)}
+                </span>{" "}
+              </span>
+            ))}
+          </ArabicText>
+          <div className="mt-6 border-t border-sand pt-3 text-center text-xs text-muted dark:border-khatulistiwa/30">
+            ﴿ {page} ﴾
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
