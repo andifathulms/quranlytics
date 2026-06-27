@@ -163,7 +163,12 @@ export function VerseRow({
         label="Word details"
       >
         {activeWord && (
-          <WordTooltip word={activeWord} onClose={() => setActiveId(null)} />
+          <WordTooltip
+            word={activeWord}
+            surahNumber={verse.surah_number}
+            ayahNumber={verse.number}
+            onClose={() => setActiveId(null)}
+          />
         )}
       </Popover>
 
