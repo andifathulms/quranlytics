@@ -1,16 +1,21 @@
 """Auth + bookmark/note views."""
 from __future__ import annotations
 
+from datetime import timedelta
+
+from django.utils import timezone
 from rest_framework import generics, permissions, status
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from apps.common.envelope import envelope
 from apps.common.throttles import RegisterRateThrottle
 
-from .models import Bookmark, Note
+from .models import Bookmark, Note, ReadingState
 from .serializers import (
     BookmarkSerializer,
     NoteSerializer,
+    ReadingStateSerializer,
     RegisterSerializer,
     UserSerializer,
 )
@@ -82,6 +87,56 @@ class BookmarkDeleteView(generics.DestroyAPIView):
 class NoteListCreateView(_OwnedListCreateView):
     model = Note
     serializer_class = NoteSerializer
+
+
+class ReadingProgressView(APIView):
+    """GET the user's reading state; POST {surah, verse} to record a position.
+
+    POST updates the resume point, the per-surah furthest verse, and the daily
+    reading streak (consecutive calendar days with any reading activity).
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        state, _ = ReadingState.objects.get_or_create(user=request.user)
+        return envelope(ReadingStateSerializer(state).data)
+
+    def post(self, request):
+        try:
+            surah = int(request.data["surah"])
+            verse = int(request.data["verse"])
+        except (KeyError, TypeError, ValueError):
+            return envelope(
+                errors=[{"message": "Provide integer 'surah' and 'verse'."}],
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not (1 <= surah <= 114) or verse < 1:
+            return envelope(
+                errors=[{"message": "surah must be 1–114 and verse >= 1."}],
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        state, _ = ReadingState.objects.get_or_create(user=request.user)
+        state.last_surah = surah
+        state.last_verse = verse
+
+        progress = state.progress or {}
+        key = str(surah)
+        progress[key] = max(int(progress.get(key, 0)), verse)
+        state.progress = progress
+
+        today = timezone.localdate()
+        if state.last_read_date == today:
+            pass  # already counted today
+        elif state.last_read_date == today - timedelta(days=1):
+            state.streak_count += 1
+        else:
+            state.streak_count = 1
+        state.longest_streak = max(state.longest_streak, state.streak_count)
+        state.last_read_date = today
+        state.save()
+        return envelope(ReadingStateSerializer(state).data)
 
 
 class NoteDetailView(generics.RetrieveUpdateDestroyAPIView):

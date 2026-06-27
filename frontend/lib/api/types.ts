@@ -213,6 +213,19 @@ export interface ProphetDetail {
   references: ProphetReference[];
 }
 
+export interface ReadingProgress {
+  last_surah: number | null;
+  last_verse: number | null;
+  last_verse_key: string | null;
+  progress: Record<string, number>;
+  streak_count: number;
+  longest_streak: number;
+  last_read_date: string | null;
+  started_count: number;
+  completed_count: number;
+  updated_at: string;
+}
+
 export interface TajwidSegment {
   text: string;
   rule: string | null;

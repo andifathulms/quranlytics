@@ -6,6 +6,7 @@ import { ArabicText } from "@/components/ui/ArabicText";
 import { Popover } from "@/components/ui/Popover";
 import { api } from "@/lib/api/client";
 import type { TajwidSegment, Verse, Word } from "@/lib/api/types";
+import { useAuth } from "@/lib/auth/AuthContext";
 
 import { useReaderAudio } from "./ReaderAudio";
 import { VerseToolbar } from "./VerseToolbar";
@@ -47,6 +48,24 @@ export function VerseRow({
       articleRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
     }
   }, [isPlaying]);
+
+  // Reading progress: when this verse scrolls into view, record it as the
+  // reader's position (no-op when signed out; debounced + furthest-kept server-side).
+  const { recordRead } = useAuth();
+  useEffect(() => {
+    const el = articleRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          recordRead(verse.surah_number, verse.number);
+        }
+      },
+      { threshold: 0.6 },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [recordRead, verse.surah_number, verse.number]);
 
   const activeWord = words?.find((w) => w.id === activeId) ?? null;
 

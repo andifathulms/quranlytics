@@ -8,6 +8,7 @@ import type {
   Envelope,
   Note,
   Profile,
+  ReadingProgress,
   User,
 } from "./types";
 
@@ -92,6 +93,15 @@ export const auth = {
     }),
   deleteNote: (token: string, id: number) =>
     authRequest<unknown>(`/notes/${id}/`, token, { method: "DELETE" }),
+
+  // Reading progress
+  getProgress: (token: string) =>
+    authRequest<ReadingProgress>("/progress/", token),
+  recordProgress: (token: string, surah: number, verse: number) =>
+    authRequest<ReadingProgress>("/progress/", token, {
+      method: "POST",
+      body: JSON.stringify({ surah, verse }),
+    }),
 
   // ── Discoveries (token may be null for public reads) ──
   listDiscoveries: (

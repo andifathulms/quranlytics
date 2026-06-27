@@ -49,6 +49,28 @@ class Note(models.Model):
         return f"Note on {self.verse} by {self.user}"
 
 
+class ReadingState(models.Model):
+    """A user's reading progress: resume point, per-surah furthest verse, and a
+    daily reading streak. One row per user (updated as they read)."""
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="reading_state",
+    )
+    last_surah = models.IntegerField(null=True, blank=True)
+    last_verse = models.IntegerField(null=True, blank=True)
+    # Furthest verse reached per surah: {"2": 50, ...}. Drives started/completed.
+    progress = models.JSONField(default=dict, blank=True)
+    streak_count = models.IntegerField(default=0)
+    longest_streak = models.IntegerField(default=0)
+    last_read_date = models.DateField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return f"ReadingState for {self.user}"
+
+
 class ReadingHistory(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
