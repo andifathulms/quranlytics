@@ -1,12 +1,13 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { ArabicText } from "@/components/ui/ArabicText";
 import { Popover } from "@/components/ui/Popover";
 import { api } from "@/lib/api/client";
 import type { TajwidSegment, Verse, Word } from "@/lib/api/types";
 
+import { useReaderAudio } from "./ReaderAudio";
 import { VerseToolbar } from "./VerseToolbar";
 import { WordTooltip } from "./WordTooltip";
 
@@ -26,6 +27,17 @@ export function VerseRow({
   const [activeId, setActiveId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const anchorRef = useRef<HTMLButtonElement | null>(null);
+  const articleRef = useRef<HTMLElement | null>(null);
+
+  const { currentId, playing } = useReaderAudio();
+  const isPlaying = currentId === verse.id && playing;
+
+  // Follow-along: scroll the verse into view when it starts playing.
+  useEffect(() => {
+    if (isPlaying) {
+      articleRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+    }
+  }, [isPlaying]);
 
   const activeWord = words?.find((w) => w.id === activeId) ?? null;
 
@@ -46,11 +58,19 @@ export function VerseRow({
   }
 
   return (
-    <article className="border-b border-sand py-6 dark:border-khatulistiwa/30">
+    <article
+      ref={articleRef}
+      className={`scroll-mt-20 rounded-lg border-b border-sand px-3 py-6 transition-colors dark:border-khatulistiwa/30 ${
+        isPlaying ? "bg-waraq/10 ring-1 ring-waraq/40" : ""
+      }`}
+    >
       <div className="mb-2 flex items-center gap-2">
         <span className="rounded-full bg-waraq/20 px-2 py-0.5 font-mono text-xs text-[#8a6d1f] dark:text-waraq">
           {verse.verse_key}
         </span>
+        {isPlaying && (
+          <span className="text-xs text-khatulistiwa">▶ playing</span>
+        )}
       </div>
 
       {/* Arabic — RTL. Colour-coded (tajwīd) spans, or clickable words. */}
