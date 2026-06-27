@@ -123,7 +123,7 @@ export function VerseRow({
         onMouseEnter={tajwid || concealed ? undefined : ensureWords}
       >
         {tajwid ? (
-          <ArabicText className="text-3xl leading-loose">
+          <ArabicText className="quran-verse leading-loose">
             {tajwid.map((s, i) => (
               <span
                 key={i}
@@ -144,13 +144,13 @@ export function VerseRow({
               }}
               className="rounded px-1 transition-colors hover:bg-waraq/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
             >
-              <ArabicText className="text-3xl leading-loose">
+              <ArabicText className="quran-verse leading-loose">
                 {w.arabic}
               </ArabicText>
             </button>
           ))
         ) : (
-          <ArabicText className="text-3xl leading-loose">
+          <ArabicText className="quran-verse leading-loose">
             {verse.text_uthmani}
           </ArabicText>
         )}

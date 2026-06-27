@@ -96,7 +96,7 @@ export function ReadingFlow({ verses }: { verses: Verse[] }) {
           className="rounded-lg border border-sand bg-surface px-5 py-8 shadow-sm dark:border-khatulistiwa/30"
         >
           <ArabicText
-            className="block text-justify text-3xl leading-[2.7] text-fg"
+            className="block text-justify quran-verse leading-[2.7] text-fg"
             style={{ textAlignLast: "right" }}
           >
             {pageVerses.map((v) => (

@@ -5,6 +5,7 @@ import { usePersistentToggle } from "@/lib/hooks/usePersistentToggle";
 import type { Verse } from "@/lib/api/types";
 
 import { ReaderAudioProvider, useReaderAudio } from "./ReaderAudio";
+import { ReaderSettingsSheet } from "./ReaderSettingsSheet";
 import { READING_MODE_KEY, ReadingFlow } from "./ReadingFlow";
 import { VerseRow } from "./VerseRow";
 
@@ -35,6 +36,7 @@ export function SpanReader({
         >
           📖 Reading mode {reading ? "on" : "off"}
         </button>
+        <ReaderSettingsSheet />
       </div>
       {reading ? (
         <ReadingFlow verses={verses} />

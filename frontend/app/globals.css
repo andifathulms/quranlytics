@@ -65,6 +65,13 @@ body {
   line-height: 2.4;
 }
 
+/* Reader verse text. Base size matches Tailwind's text-3xl (1.875rem) and is
+ * scaled by the reader's font-size control via --quran-scale (default 1).
+ * Line-height is left to the leading-* utilities so it scales proportionally. */
+.quran-verse {
+  font-size: calc(1.875rem * var(--quran-scale, 1));
+}
+
 @layer utilities {
   .text-shadow-gold {
     text-shadow: 0 0 12px rgba(201, 168, 76, 0.35);

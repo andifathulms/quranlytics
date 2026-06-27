@@ -10,6 +10,7 @@ import { usePersistentToggle } from "@/lib/hooks/usePersistentToggle";
 import { useToast } from "@/lib/toast/ToastContext";
 
 import { ReaderAudioProvider, useReaderAudio } from "./ReaderAudio";
+import { ReaderSettingsSheet } from "./ReaderSettingsSheet";
 import { READING_MODE_KEY, ReadingFlow } from "./ReadingFlow";
 import { VerseRow } from "./VerseRow";
 
@@ -160,6 +161,7 @@ export function ReaderVerses({
         >
           📖 Reading mode {reading ? "on" : "off"}
         </button>
+        <ReaderSettingsSheet />
         {!reading && (
           <>
             <button
