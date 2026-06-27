@@ -18,10 +18,12 @@ export function VerseRow({
   verse,
   tajwid,
   ruleColors,
+  hidden = false,
 }: {
   verse: Verse;
   tajwid?: TajwidSegment[];
   ruleColors?: Record<string, string>;
+  hidden?: boolean;
 }) {
   const [words, setWords] = useState<Word[] | null>(verse.words ?? null);
   const [activeId, setActiveId] = useState<number | null>(null);
@@ -31,6 +33,13 @@ export function VerseRow({
 
   const { currentId, playing } = useReaderAudio();
   const isPlaying = currentId === verse.id && playing;
+
+  // Ḥifẓ self-test: hide the Arabic until the reader taps to check recall.
+  const [revealed, setRevealed] = useState(false);
+  useEffect(() => {
+    setRevealed(false); // re-hide whenever hide-mode is (re)enabled
+  }, [hidden]);
+  const concealed = hidden && !revealed;
 
   // Follow-along: scroll the verse into view when it starts playing.
   useEffect(() => {
@@ -73,11 +82,25 @@ export function VerseRow({
         )}
       </div>
 
-      {/* Arabic — RTL. Colour-coded (tajwīd) spans, or clickable words. */}
+      {/* Arabic — RTL. Colour-coded (tajwīd) spans, or clickable words.
+          In ḥifẓ hide-mode it's blurred until tapped (recall self-test). */}
+      <div className="relative">
+      {concealed && (
+        <button
+          onClick={() => setRevealed(true)}
+          className="absolute inset-0 z-10 flex items-center justify-center rounded text-sm text-khatulistiwa"
+          aria-label="Reveal verse"
+        >
+          👁 Tap to reveal
+        </button>
+      )}
       <div
         dir="rtl"
-        className="flex flex-wrap justify-end gap-x-2 gap-y-3 text-right"
-        onMouseEnter={tajwid ? undefined : ensureWords}
+        className={`flex flex-wrap justify-end gap-x-2 gap-y-3 text-right transition ${
+          concealed ? "select-none blur-md" : ""
+        }`}
+        aria-hidden={concealed}
+        onMouseEnter={tajwid || concealed ? undefined : ensureWords}
       >
         {tajwid ? (
           <ArabicText className="text-3xl leading-loose">
@@ -111,6 +134,7 @@ export function VerseRow({
             {verse.text_uthmani}
           </ArabicText>
         )}
+      </div>
       </div>
 
       <Popover

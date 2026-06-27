@@ -23,6 +23,11 @@ interface ReaderAudioApi {
   toggle: (verseId: number) => void; // play/pause a verse (continuous from there)
   playSurah: () => void;
   pause: () => void;
+  // Memorization (ḥifẓ) controls.
+  repeat: number; // times to play each verse before advancing (Infinity = loop)
+  setRepeat: (n: number) => void;
+  loopSurah: boolean; // restart from the first verse after the last
+  setLoopSurah: (on: boolean) => void;
 }
 
 const Ctx = createContext<ReaderAudioApi | null>(null);
@@ -47,6 +52,14 @@ export function ReaderAudioProvider({
   const [reciterId, setReciterIdState] = useState(DEFAULT_RECITER.id);
   const [currentId, setCurrentId] = useState<number | null>(null);
   const [playing, setPlaying] = useState(false);
+  const [repeat, setRepeat] = useState(1);
+  const [loopSurah, setLoopSurah] = useState(false);
+  const playsRef = useRef(0); // plays of the current verse so far
+  // Keep the latest repeat/loop visible to the (stable) onEnded handler.
+  const repeatRef = useRef(repeat);
+  repeatRef.current = repeat;
+  const loopRef = useRef(loopSurah);
+  loopRef.current = loopSurah;
 
   const order = useMemo(() => verses.map((v) => v.id), [verses]);
   const byId = useMemo(() => {
@@ -69,6 +82,7 @@ export function ReaderAudioProvider({
       const el = audioRef.current;
       if (!v || !el) return;
       el.src = verseAudioUrl(v.surah_number, v.number, folder);
+      playsRef.current = 1;
       setCurrentId(id);
       void el.play();
     },
@@ -114,8 +128,19 @@ export function ReaderAudioProvider({
   );
 
   function onEnded() {
+    // Ḥifẓ: replay the same verse until it's been heard `repeat` times.
+    if (playsRef.current < repeatRef.current) {
+      playsRef.current += 1;
+      const el = audioRef.current;
+      if (el) {
+        el.currentTime = 0;
+        void el.play();
+      }
+      return;
+    }
     const idx = currentId != null ? order.indexOf(currentId) : -1;
-    const next = idx >= 0 ? order[idx + 1] : undefined;
+    let next = idx >= 0 ? order[idx + 1] : undefined;
+    if (next == null && loopRef.current && order.length) next = order[0];
     if (next != null) start(next);
     else setPlaying(false);
   }
@@ -128,6 +153,10 @@ export function ReaderAudioProvider({
     toggle,
     playSurah,
     pause,
+    repeat,
+    setRepeat,
+    loopSurah,
+    setLoopSurah,
   };
 
   return (
