@@ -1,7 +1,10 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+
 import { ArabicText } from "@/components/ui/ArabicText";
 import type { Verse } from "@/lib/api/types";
+import { useAuth } from "@/lib/auth/AuthContext";
 
 // Shared localStorage key so the reading-mode preference persists across the
 // surah, juzʾ, and page readers.
@@ -27,6 +30,39 @@ function byPage(verses: Verse[]): { page: number; verses: Verse[] }[] {
   return groups;
 }
 
+// A single ayah within the flowing mushaf. Inline so the text stays continuous,
+// but it owns a ref + observer so that reading in mushaf mode still records the
+// reader's position (streaks, goal, "continue reading") — exactly like the
+// per-verse rows do in normal mode.
+function FlowAyah({ verse }: { verse: Verse }) {
+  const ref = useRef<HTMLSpanElement | null>(null);
+  const { recordRead } = useAuth();
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          recordRead(verse.surah_number, verse.number);
+        }
+      },
+      { threshold: 0.5 },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [recordRead, verse.surah_number, verse.number]);
+
+  return (
+    <span ref={ref} id={`${verse.surah_number}-${verse.number}`} className="scroll-mt-20">
+      {verse.text_uthmani}
+      <span className="mx-1.5 inline-flex h-8 w-8 items-center justify-center rounded-full border border-waraq align-middle text-base text-waraq">
+        {toArabicNumber(verse.number)}
+      </span>{" "}
+    </span>
+  );
+}
+
 // A span of verses (surah, juzʾ, or page) laid out like the printed muṣḥaf:
 // continuous RTL Arabic, justified so both margins align, split into pages that
 // end on verse boundaries. The Uthmani text is rendered verbatim; the ayah
@@ -46,16 +82,7 @@ export function ReadingFlow({ verses }: { verses: Verse[] }) {
             style={{ textAlignLast: "right" }}
           >
             {pageVerses.map((v) => (
-              <span
-                key={v.id}
-                id={`${v.surah_number}-${v.number}`}
-                className="scroll-mt-20"
-              >
-                {v.text_uthmani}
-                <span className="mx-1.5 inline-flex h-8 w-8 items-center justify-center rounded-full border border-waraq align-middle text-base text-waraq">
-                  {toArabicNumber(v.number)}
-                </span>{" "}
-              </span>
+              <FlowAyah key={v.id} verse={v} />
             ))}
           </ArabicText>
           <div className="mt-6 border-t border-sand pt-3 text-center text-xs text-muted dark:border-khatulistiwa/30">
