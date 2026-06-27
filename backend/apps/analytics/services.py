@@ -569,6 +569,30 @@ _CURATED_PROPHET_LINK_LEMMAS = {
 }
 
 
+def get_surah_tajwid(surah_id: int) -> dict[str, Any]:
+    """Per-verse tajwīd segmentation for a surah (reader colour-coding).
+
+    Each verse becomes an ordered list of ``{text, rule}`` segments whose texts
+    concatenate to the exact Uthmani verse — the engine only colours, never
+    alters (see apps.quran.tajwid).
+    """
+    from apps.quran.tajwid import RULES_LEGEND, annotate
+
+    surah = Surah.objects.filter(number=surah_id).first()
+    if surah is None:
+        return {"available": False}
+    verses = surah.verses.order_by("number")
+    return {
+        "available": True,
+        "surah_id": surah_id,
+        "legend": RULES_LEGEND,
+        "verses": [
+            {"verse_key": v.key, "segments": annotate(v.text_uthmani)}
+            for v in verses
+        ],
+    }
+
+
 def get_lemma_links() -> dict[str, Any]:
     """Map normalized lemmas → the divine name / prophet they belong to.
 

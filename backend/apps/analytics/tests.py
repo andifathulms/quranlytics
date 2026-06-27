@@ -309,6 +309,23 @@ class TestProphets:
         assert get_prophet("nobody")["available"] is False
 
 
+class TestSurahTajwid:
+    def test_segments_preserve_verse_text(self, verse):
+        from apps.analytics.services import get_surah_tajwid
+
+        result = get_surah_tajwid(1)
+        assert result["available"] is True
+        assert result["legend"]
+        row = next(v for v in result["verses"] if v["verse_key"] == "1:2")
+        # Integrity: colouring must not alter the Quranic text.
+        assert "".join(s["text"] for s in row["segments"]) == verse.text_uthmani
+
+    def test_missing_surah(self):
+        from apps.analytics.services import get_surah_tajwid
+
+        assert get_surah_tajwid(999)["available"] is False
+
+
 class TestLemmaLinks:
     def test_maps_lemmas_to_names_and_prophets(self):
         from apps.analytics.services import get_lemma_links
