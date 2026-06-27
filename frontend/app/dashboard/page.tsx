@@ -8,7 +8,7 @@ import { Badge, Card } from "@/components/ui/Card";
 import { useAuth } from "@/lib/auth/AuthContext";
 
 export default function DashboardPage() {
-  const { user, ready, bookmarks, notes, progress } = useAuth();
+  const { user, ready, bookmarks, notes, progress, setReadingGoal } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -96,6 +96,15 @@ export default function DashboardPage() {
         </section>
       )}
 
+      {progress && (
+        <GoalCard
+          goal={progress.daily_goal}
+          today={progress.today_ayahs}
+          met={progress.goal_met}
+          onSet={setReadingGoal}
+        />
+      )}
+
       <section>
         <h2 className="mb-3 flex items-center gap-2 font-display text-xl">
           Bookmarks <Badge tone="gold">{bookmarkList.length}</Badge>
@@ -142,5 +151,74 @@ export default function DashboardPage() {
         )}
       </section>
     </div>
+  );
+}
+
+const GOAL_OPTIONS = [0, 5, 10, 20, 50];
+
+function GoalCard({
+  goal,
+  today,
+  met,
+  onSet,
+}: {
+  goal: number;
+  today: number;
+  met: boolean;
+  onSet: (goal: number) => Promise<void>;
+}) {
+  const pct = goal > 0 ? Math.min(100, Math.round((today / goal) * 100)) : 0;
+  const remaining = Math.max(0, goal - today);
+
+  return (
+    <Card>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="font-display text-xl">Daily reading goal</h2>
+        <div className="flex gap-1 text-xs">
+          {GOAL_OPTIONS.map((g) => (
+            <button
+              key={g}
+              onClick={() => onSet(g)}
+              className={`rounded px-2 py-1 transition-colors ${
+                goal === g
+                  ? "bg-khatulistiwa text-parchment"
+                  : "border border-sand text-muted hover:text-fg"
+              }`}
+            >
+              {g === 0 ? "Off" : `${g}/day`}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {goal === 0 ? (
+        <p className="mt-2 text-sm text-muted">
+          Set a daily target of new ayahs to build a habit — reading in the
+          reader counts automatically.
+        </p>
+      ) : (
+        <div className="mt-3">
+          <div className="h-2 w-full overflow-hidden rounded-full bg-surface-2">
+            <div
+              className={`h-full rounded-full transition-all ${
+                met ? "bg-emerald" : "bg-waraq"
+              }`}
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+          <p className="mt-2 text-sm text-muted">
+            {met ? (
+              <span className="text-[#1e7e44] dark:text-emerald">
+                ✓ Goal met — {today} new ayahs today. Baarak Allāhu fīk!
+              </span>
+            ) : (
+              <>
+                {today} / {goal} new ayahs today — {remaining} to go.
+              </>
+            )}
+          </p>
+        </div>
+      )}
+    </Card>
   );
 }

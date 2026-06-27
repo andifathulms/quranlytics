@@ -31,6 +31,7 @@ interface AuthState {
   // reading progress
   progress: ReadingProgress | null;
   recordRead: (surah: number, verse: number) => void;
+  setReadingGoal: (goal: number) => Promise<void>;
 }
 
 const AuthCtx = createContext<AuthState | null>(null);
@@ -145,6 +146,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [token],
   );
 
+  const setReadingGoal = useCallback(
+    async (goal: number) => {
+      if (!token) return;
+      const updated = await auth.setProgressGoal(token, goal);
+      setProgress(updated);
+    },
+    [token],
+  );
+
   const toggleBookmark = useCallback(
     async (verseId: number) => {
       if (!token) return;
@@ -206,8 +216,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       removeNote,
       progress,
       recordRead,
+      setReadingGoal,
     }),
-    [user, token, ready, login, register, logout, bookmarks, notes, toggleBookmark, saveNote, removeNote, progress, recordRead],
+    [user, token, ready, login, register, logout, bookmarks, notes, toggleBookmark, saveNote, removeNote, progress, recordRead, setReadingGoal],
   );
 
   return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;

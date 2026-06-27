@@ -65,6 +65,10 @@ class ReadingState(models.Model):
     streak_count = models.IntegerField(default=0)
     longest_streak = models.IntegerField(default=0)
     last_read_date = models.DateField(null=True, blank=True)
+    # Daily reading goal: target new ayahs/day (0 = no goal). today_ayahs counts
+    # new ground covered on last_read_date.
+    daily_goal = models.IntegerField(default=0)
+    today_ayahs = models.IntegerField(default=0)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self) -> str:

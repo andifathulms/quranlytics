@@ -102,6 +102,11 @@ export const auth = {
       method: "POST",
       body: JSON.stringify({ surah, verse }),
     }),
+  setProgressGoal: (token: string, daily_goal: number) =>
+    authRequest<ReadingProgress>("/progress/", token, {
+      method: "PATCH",
+      body: JSON.stringify({ daily_goal }),
+    }),
 
   // ── Discoveries (token may be null for public reads) ──
   listDiscoveries: (

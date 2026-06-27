@@ -57,6 +57,8 @@ class ReadingStateSerializer(serializers.ModelSerializer):
     last_verse_key = serializers.SerializerMethodField()
     started_count = serializers.SerializerMethodField()
     completed_count = serializers.SerializerMethodField()
+    today_ayahs = serializers.SerializerMethodField()
+    goal_met = serializers.SerializerMethodField()
 
     class Meta:
         model = ReadingState
@@ -70,8 +72,23 @@ class ReadingStateSerializer(serializers.ModelSerializer):
             "last_read_date",
             "started_count",
             "completed_count",
+            "daily_goal",
+            "today_ayahs",
+            "goal_met",
             "updated_at",
         )
+
+    def _today_ayahs(self, obj: ReadingState) -> int:
+        from django.utils import timezone
+
+        # Stale counter from a previous day reads as 0 for today.
+        return obj.today_ayahs if obj.last_read_date == timezone.localdate() else 0
+
+    def get_today_ayahs(self, obj: ReadingState) -> int:
+        return self._today_ayahs(obj)
+
+    def get_goal_met(self, obj: ReadingState) -> bool:
+        return obj.daily_goal > 0 and self._today_ayahs(obj) >= obj.daily_goal
 
     def get_last_verse_key(self, obj: ReadingState) -> str | None:
         if obj.last_surah and obj.last_verse:

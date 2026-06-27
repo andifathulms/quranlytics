@@ -223,6 +223,9 @@ export interface ReadingProgress {
   last_read_date: string | null;
   started_count: number;
   completed_count: number;
+  daily_goal: number;
+  today_ayahs: number;
+  goal_met: boolean;
   updated_at: string;
 }
 
