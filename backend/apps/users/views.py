@@ -140,6 +140,12 @@ class ReadingProgressView(APIView):
         # Daily-goal counter: reset on a new day, then add today's new ayahs.
         if new_day:
             state.today_ayahs = 0
+            # Log the day for the streak heatmap (kept to a recent window).
+            iso = today.isoformat()
+            days = state.reading_days or []
+            if iso not in days:
+                days.append(iso)
+            state.reading_days = days[-180:]
         state.today_ayahs += delta
         state.last_read_date = today
         state.save()

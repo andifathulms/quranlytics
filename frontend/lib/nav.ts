@@ -30,6 +30,11 @@ export const NAV_GROUPS: NavGroup[] = [
         label: "By Juzʾ",
         description: "Read the Quran in its 30 equal parts.",
       },
+      {
+        href: "/page",
+        label: "By Page",
+        description: "Jump to any of the 604 mushaf pages.",
+      },
     ],
   },
   {

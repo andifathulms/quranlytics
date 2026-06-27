@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { ContinueReadingButton } from "@/components/reader/ContinueReadingButton";
 import { SurahBrowser } from "@/components/reader/SurahBrowser";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -59,6 +60,7 @@ export default async function HomePage() {
           Press <kbd className="rounded bg-parchment/10 px-1.5 py-0.5">/</kbd> anywhere
           to search a verse, word, or concept.
         </p>
+        <ContinueReadingButton />
       </section>
 
       {/* Researcher lane — entry points into the analytical layer. */}

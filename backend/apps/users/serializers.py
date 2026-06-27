@@ -76,6 +76,7 @@ class ReadingStateSerializer(serializers.ModelSerializer):
             "daily_goal",
             "today_ayahs",
             "goal_met",
+            "reading_days",
             "updated_at",
         )
 

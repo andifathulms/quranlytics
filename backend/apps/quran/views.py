@@ -106,6 +106,27 @@ class JuzVersesView(ListAPIView):
         return envelope(data, meta={"count": len(data)})
 
 
+class PageVersesView(ListAPIView):
+    """GET /page/{n}/verses/ — all verses on a mushaf page (1–604)."""
+
+    serializer_class = VerseSerializer
+    pagination_class = None  # a page holds only a handful of verses
+
+    def get_queryset(self):
+        return (
+            Verse.objects.filter(page_number=self.kwargs["number"])
+            .select_related("surah")
+            .prefetch_related(
+                Prefetch("translations", queryset=Translation.objects.all())
+            )
+            .order_by("surah__number", "number")
+        )
+
+    def list(self, request, *args, **kwargs):
+        data = self.get_serializer(self.get_queryset(), many=True).data
+        return envelope(data, meta={"count": len(data)})
+
+
 class VerseWordsView(ListAPIView):
     """GET /verses/{id}/words/ — word-level morphology breakdown."""
 
