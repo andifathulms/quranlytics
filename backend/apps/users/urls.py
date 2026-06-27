@@ -27,4 +27,6 @@ urlpatterns = [
     # Notes
     path("notes/", views.NoteListCreateView.as_view(), name="note-list"),
     path("notes/<int:pk>/", views.NoteDetailView.as_view(), name="note-detail"),
+    # Reading progress
+    path("progress/", views.ReadingProgressView.as_view(), name="progress"),
 ]

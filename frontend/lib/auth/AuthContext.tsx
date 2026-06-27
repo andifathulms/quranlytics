@@ -6,11 +6,12 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
 import { auth } from "@/lib/api/auth";
-import type { Bookmark, Note, User } from "@/lib/api/types";
+import type { Bookmark, Note, ReadingProgress, User } from "@/lib/api/types";
 
 const TOKEN_KEY = "quranlytics.token";
 
@@ -27,6 +28,9 @@ interface AuthState {
   toggleBookmark: (verseId: number) => Promise<void>;
   saveNote: (verseId: number, body: string) => Promise<void>;
   removeNote: (verseId: number) => Promise<void>;
+  // reading progress
+  progress: ReadingProgress | null;
+  recordRead: (surah: number, verse: number) => void;
 }
 
 const AuthCtx = createContext<AuthState | null>(null);
@@ -37,14 +41,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
   const [bookmarks, setBookmarks] = useState<Map<number, Bookmark>>(new Map());
   const [notes, setNotes] = useState<Map<number, Note>>(new Map());
+  const [progress, setProgress] = useState<ReadingProgress | null>(null);
+  // Debounce reading-position pings: keep only the latest while scrolling.
+  const pendingPos = useRef<{ s: number; v: number } | null>(null);
+  const pingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadUserData = useCallback(async (tok: string) => {
-    const [bm, nt] = await Promise.all([
+    const [bm, nt, pr] = await Promise.all([
       auth.listBookmarks(tok),
       auth.listNotes(tok),
+      auth.getProgress(tok).catch(() => null),
     ]);
     setBookmarks(new Map(bm.map((b: Bookmark) => [b.verse, b])));
     setNotes(new Map(nt.map((n: Note) => [n.verse, n])));
+    setProgress(pr);
   }, []);
 
   // Restore session from localStorage on mount.
@@ -102,7 +112,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setBookmarks(new Map());
     setNotes(new Map());
+    setProgress(null);
   }, []);
+
+  // Record a reading position: update the resume point optimistically, then
+  // sync to the server (debounced) so scrolling doesn't spam the API.
+  const recordRead = useCallback(
+    (surah: number, verse: number) => {
+      if (!token) return;
+      pendingPos.current = { s: surah, v: verse };
+      setProgress((p) =>
+        p
+          ? {
+              ...p,
+              last_surah: surah,
+              last_verse: verse,
+              last_verse_key: `${surah}:${verse}`,
+            }
+          : p,
+      );
+      if (pingTimer.current) clearTimeout(pingTimer.current);
+      pingTimer.current = setTimeout(() => {
+        const pos = pendingPos.current;
+        if (pos) {
+          auth
+            .recordProgress(token, pos.s, pos.v)
+            .then(setProgress)
+            .catch(() => {});
+        }
+      }, 2500);
+    },
+    [token],
+  );
 
   const toggleBookmark = useCallback(
     async (verseId: number) => {
@@ -163,8 +204,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       toggleBookmark,
       saveNote,
       removeNote,
+      progress,
+      recordRead,
     }),
-    [user, token, ready, login, register, logout, bookmarks, notes, toggleBookmark, saveNote, removeNote],
+    [user, token, ready, login, register, logout, bookmarks, notes, toggleBookmark, saveNote, removeNote, progress, recordRead],
   );
 
   return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;

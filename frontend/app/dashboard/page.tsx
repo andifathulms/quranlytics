@@ -8,7 +8,7 @@ import { Badge, Card } from "@/components/ui/Card";
 import { useAuth } from "@/lib/auth/AuthContext";
 
 export default function DashboardPage() {
-  const { user, ready, bookmarks, notes } = useAuth();
+  const { user, ready, bookmarks, notes, progress } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -46,6 +46,55 @@ export default function DashboardPage() {
           </Link>
         </div>
       </header>
+
+      {progress && (progress.last_verse_key || progress.streak_count > 0) && (
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <Card className="sm:col-span-1">
+            <div className="text-xs uppercase tracking-wide text-muted">
+              Continue reading
+            </div>
+            {progress.last_verse_key ? (
+              <Link
+                href={`/${progress.last_surah}`}
+                className="mt-1 inline-block font-display text-2xl text-khatulistiwa hover:underline"
+              >
+                Surah {progress.last_surah} · ayah {progress.last_verse} →
+              </Link>
+            ) : (
+              <p className="mt-1 text-sm text-muted">Start reading any surah.</p>
+            )}
+          </Card>
+          <Card>
+            <div className="text-xs uppercase tracking-wide text-muted">
+              Reading streak
+            </div>
+            <div className="mt-1 font-display text-2xl">
+              🔥 {progress.streak_count}{" "}
+              <span className="text-base text-muted">
+                day{progress.streak_count === 1 ? "" : "s"}
+              </span>
+            </div>
+            <div className="text-xs text-muted">
+              Longest: {progress.longest_streak}
+            </div>
+          </Card>
+          <Card>
+            <div className="text-xs uppercase tracking-wide text-muted">
+              Surahs
+            </div>
+            <div className="mt-1 font-display text-2xl">
+              {progress.completed_count}
+              <span className="text-base text-muted">
+                {" "}
+                completed
+              </span>
+            </div>
+            <div className="text-xs text-muted">
+              {progress.started_count} started
+            </div>
+          </Card>
+        </section>
+      )}
 
       <section>
         <h2 className="mb-3 flex items-center gap-2 font-display text-xl">
