@@ -6,6 +6,7 @@ import { api } from "@/lib/api/client";
 import type { SurahTajwid, TajwidSegment, Verse } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { RECITERS } from "@/lib/audio";
+import { useFullscreen } from "@/lib/hooks/useFullscreen";
 import { usePersistentToggle } from "@/lib/hooks/usePersistentToggle";
 import { useToast } from "@/lib/toast/ToastContext";
 
@@ -45,6 +46,7 @@ export function ReaderVerses({
   const [memorize, setMemorize] = useState(false);
   const [hideText, setHideText] = useState(false);
   const [reading, toggleReading] = usePersistentToggle(READING_MODE_KEY);
+  const fs = useFullscreen();
 
   const maxAyah = verses.length
     ? Math.max(...verses.map((v) => v.number))
@@ -133,6 +135,7 @@ export function ReaderVerses({
 
   return (
     <ReaderAudioProvider verses={verses}>
+      <div ref={fs.ref} className="reader-immersive">
       {progress && furthest > 0 && (
         <div className="mb-4 flex items-center gap-3 text-sm">
           <span className={surahCompleted ? "text-[#1e7e44] dark:text-emerald" : "text-muted"}>
@@ -162,6 +165,20 @@ export function ReaderVerses({
           📖 Reading mode {reading ? "on" : "off"}
         </button>
         <ReaderSettingsSheet />
+        {fs.supported && (
+          <button
+            onClick={fs.toggle}
+            aria-pressed={fs.active}
+            className={`rounded-lg border px-3 py-1.5 text-sm transition-colors ${
+              fs.active
+                ? "border-waraq bg-waraq/15 text-waraq"
+                : "border-sand text-lapis/70 hover:text-lapis dark:text-parchment/70"
+            }`}
+            title="Distraction-free reading"
+          >
+            ⤢ {fs.active ? "Exit" : "Immersive"}
+          </button>
+        )}
         {!reading && (
           <>
             <button
@@ -262,6 +279,7 @@ export function ReaderVerses({
           ))}
         </section>
       )}
+      </div>
     </ReaderAudioProvider>
   );
 }

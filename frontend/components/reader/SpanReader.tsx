@@ -1,6 +1,7 @@
 "use client";
 
 import { RECITERS } from "@/lib/audio";
+import { useFullscreen } from "@/lib/hooks/useFullscreen";
 import { usePersistentToggle } from "@/lib/hooks/usePersistentToggle";
 import type { Verse } from "@/lib/api/types";
 
@@ -20,9 +21,11 @@ export function SpanReader({
   label?: string;
 }) {
   const [reading, toggleReading] = usePersistentToggle(READING_MODE_KEY);
+  const fs = useFullscreen();
 
   return (
     <ReaderAudioProvider verses={verses}>
+      <div ref={fs.ref} className="reader-immersive">
       <div className="mb-4 flex flex-wrap items-center gap-2 border-b border-sand pb-3 dark:border-khatulistiwa/30">
         <AudioControls label={label} />
         <button
@@ -37,6 +40,20 @@ export function SpanReader({
           📖 Reading mode {reading ? "on" : "off"}
         </button>
         <ReaderSettingsSheet />
+        {fs.supported && (
+          <button
+            onClick={fs.toggle}
+            aria-pressed={fs.active}
+            className={`rounded-lg border px-3 py-1.5 text-sm transition-colors ${
+              fs.active
+                ? "border-waraq bg-waraq/15 text-waraq"
+                : "border-sand text-lapis/70 hover:text-lapis dark:text-parchment/70"
+            }`}
+            title="Distraction-free reading"
+          >
+            ⤢ {fs.active ? "Exit" : "Immersive"}
+          </button>
+        )}
       </div>
       {reading ? (
         <ReadingFlow verses={verses} />
@@ -47,6 +64,7 @@ export function SpanReader({
           ))}
         </section>
       )}
+      </div>
     </ReaderAudioProvider>
   );
 }

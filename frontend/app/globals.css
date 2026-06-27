@@ -25,6 +25,24 @@
   --foreground: var(--color-fg);
 }
 
+/* Sepia: a warm, low-contrast reading theme that's easier on the eyes for long
+ * sittings (tahajjud, khatmah). Not a dark theme — it stays light, just warm. */
+.sepia {
+  --color-bg: #f3e9d2; /* warm cream */
+  --color-surface: #faf3e0;
+  --color-surface-2: #ece0c4;
+  --color-border: #ddc9a0;
+  --color-fg: #463722; /* warm sepia ink */
+  --color-muted: #7c6a4d;
+  --color-accent: #1b4f72;
+  --color-gold: #b08a2e;
+  --color-positive: #2ecc71;
+  --color-danger: #b91c1c;
+
+  --background: var(--color-bg);
+  --foreground: var(--color-fg);
+}
+
 .dark {
   --color-bg: #0d1b2a;
   --color-surface: #142435;
@@ -76,6 +94,21 @@ body {
   .text-shadow-gold {
     text-shadow: 0 0 12px rgba(201, 168, 76, 0.35);
   }
+}
+
+/* Immersive (distraction-free) reading: the reader container goes fullscreen,
+ * themed and padded for comfortable centred reading. */
+.reader-immersive:fullscreen {
+  background: var(--color-bg);
+  color: var(--color-fg);
+  overflow-y: auto;
+  padding: 1.5rem clamp(1rem, 8vw, 7rem) 4rem;
+}
+.reader-immersive:-webkit-full-screen {
+  background: var(--color-bg);
+  color: var(--color-fg);
+  overflow-y: auto;
+  padding: 1.5rem clamp(1rem, 8vw, 7rem) 4rem;
 }
 
 /* Rendered tafsir HTML (from quran.com) — readable spacing. */
