@@ -6,6 +6,8 @@ import { ArabicText } from "@/components/ui/ArabicText";
 import type { Verse } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/AuthContext";
 
+import { useReaderAudio } from "./ReaderAudio";
+
 // Shared localStorage key so the reading-mode preference persists across the
 // surah, juzʾ, and page readers.
 export const READING_MODE_KEY = "quranlytics:reading";
@@ -37,6 +39,8 @@ function byPage(verses: Verse[]): { page: number; verses: Verse[] }[] {
 function FlowAyah({ verse }: { verse: Verse }) {
   const ref = useRef<HTMLSpanElement | null>(null);
   const { recordRead } = useAuth();
+  const { currentId, playing } = useReaderAudio();
+  const active = currentId === verse.id;
 
   useEffect(() => {
     const el = ref.current;
@@ -53,8 +57,22 @@ function FlowAyah({ verse }: { verse: Verse }) {
     return () => obs.disconnect();
   }, [recordRead, verse.surah_number, verse.number]);
 
+  // Follow-along: keep the verse the reciter is on in view, so the reader never
+  // loses their place in the continuous mushaf text.
+  useEffect(() => {
+    if (active && playing) {
+      ref.current?.scrollIntoView({ block: "center", behavior: "smooth" });
+    }
+  }, [active, playing]);
+
   return (
-    <span ref={ref} id={`${verse.surah_number}-${verse.number}`} className="scroll-mt-20">
+    <span
+      ref={ref}
+      id={`${verse.surah_number}-${verse.number}`}
+      className={`scroll-mt-20 rounded transition-colors ${
+        active ? "bg-waraq/20 ring-1 ring-waraq/40" : ""
+      }`}
+    >
       {verse.text_uthmani}
       <span className="mx-1.5 inline-flex h-8 w-8 items-center justify-center rounded-full border border-waraq align-middle text-base text-waraq">
         {toArabicNumber(verse.number)}
