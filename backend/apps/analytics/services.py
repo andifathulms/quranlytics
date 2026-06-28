@@ -353,6 +353,51 @@ def find_rare_words(
     ]
 
 
+def _rare_roots_qs(max_count: int):
+    """Base queryset of rare roots (<= max_count occurrences), rarest first."""
+    return (
+        WordFrequency.objects.filter(root__isnull=False, total_count__lte=max_count)
+        .select_related("root")
+        .order_by("total_count", "root__root_arabic")
+    )
+
+
+def count_rare_roots(max_count: int = 1) -> int:
+    """Total number of roots appearing <= max_count times (for pagination)."""
+    return _rare_roots_qs(max_count).count()
+
+
+def find_rare_roots(
+    max_count: int = 1, limit: int = 60, offset: int = 0
+) -> list[dict[str, Any]]:
+    """Roots appearing <= max_count times in the whole Quran (rare vocabulary).
+
+    Unlike :func:`find_rare_words` (which counts dictionary forms), this counts
+    the trilateral root, so it surfaces genuinely rare *concepts* rather than
+    rare inflections of common roots. One representative verse per root.
+    """
+    rows = list(_rare_roots_qs(max_count)[offset : offset + limit])
+    root_ids = [r.root_id for r in rows]
+    samples: dict[int, str] = {}
+    for w in (
+        Word.objects.filter(root_id__in=root_ids)
+        .select_related("verse__surah")
+        .order_by("root_id", "verse__surah__number", "verse__number")
+    ):
+        samples.setdefault(w.root_id, w.verse.key)
+    return [
+        {
+            "root": wf.root.display,
+            "root_key": wf.root.root_arabic,
+            "transliteration": wf.root.root_transliteration,
+            "meaning": wf.root.meaning_en,
+            "count": wf.total_count,
+            "verse_key": samples.get(wf.root_id),
+        }
+        for wf in rows
+    ]
+
+
 def get_verse_lengths(surah_id: int) -> dict[str, Any]:
     """Per-verse word and letter counts for a surah — for rhythm analysis."""
     surah = Surah.objects.filter(number=surah_id).first()
