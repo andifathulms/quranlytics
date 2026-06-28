@@ -192,3 +192,26 @@ class WordFrequency(models.Model):
     def __str__(self) -> str:
         label = self.root.root_arabic if self.root else self.lemma
         return f"{label}: {self.total_count}"
+
+
+class TafsirEntry(models.Model):
+    """Persisted tafsir text, fetched once from the external source then served
+    from the DB so the upstream API is not hit on every panel open."""
+
+    LANGUAGE_CHOICES = [("en", "English"), ("id", "Indonesian")]
+    verse_key = models.CharField(max_length=12, db_index=True)  # e.g. "2:255"
+    language = models.CharField(max_length=5, choices=LANGUAGE_CHOICES)
+    resource_name = models.CharField(max_length=100, blank=True)
+    text = models.TextField(blank=True)
+    fetched_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name_plural = "Tafsir entries"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["verse_key", "language"], name="uniq_tafsir_per_verse_lang"
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.verse_key} ({self.language})"
