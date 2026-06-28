@@ -15,13 +15,15 @@ import type { Cooccurrence } from "@/lib/api/types";
 import { ArabicKeyboard } from "./ArabicKeyboard";
 import { VerseList } from "./VerseList";
 
-// Ready-made word pairs so the tool can be tried without typing Arabic.
+// Ready-made word pairs so the tool can be tried without typing Arabic. Matching
+// is by lemma (dictionary form), so these are bare nouns — not "ال"-prefixed —
+// and each is verified to return verses.
 const EXAMPLES: { w1: string; w2: string; label: string }[] = [
+  { w1: "سماء", w2: "ارض", label: "heaven ∩ earth" },
+  { w1: "ليل", w2: "نهار", label: "night ∩ day" },
+  { w1: "شمس", w2: "قمر", label: "sun ∩ moon" },
   { w1: "رحمة", w2: "عذاب", label: "mercy ∩ punishment" },
-  { w1: "الجنة", w2: "النار", label: "paradise ∩ fire" },
-  { w1: "السماء", w2: "الأرض", label: "heaven ∩ earth" },
-  { w1: "الدنيا", w2: "الآخرة", label: "this world ∩ hereafter" },
-  { w1: "الليل", w2: "النهار", label: "night ∩ day" },
+  { w1: "جنة", w2: "نار", label: "paradise ∩ fire" },
 ];
 
 // Find every verse where two words co-occur (e.g. رحمة + عذاب).
