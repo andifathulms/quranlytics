@@ -380,6 +380,9 @@ export interface RareWord {
   count: number;
   verse_key: string | null;
   gloss?: string;
+  root?: string; // root in display orthography
+  root_key?: string; // normalized root, for linking to the explorer
+  root_count?: number | null; // total occurrences of that root in the Quran
 }
 
 export interface RareWords {

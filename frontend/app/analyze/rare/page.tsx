@@ -97,6 +97,29 @@ export default function RareWordsPage() {
                       {w.gloss}
                     </p>
                   )}
+                  {w.root && (
+                    <Link
+                      href={`/analyze/root?root=${encodeURIComponent(w.root_key || w.root)}`}
+                      className="mt-1 inline-flex items-center gap-1 text-xs text-muted hover:text-khatulistiwa"
+                      title={
+                        typeof w.root_count === "number" && w.root_count >= 20
+                          ? "A rare form of a common root"
+                          : "Explore this root"
+                      }
+                    >
+                      <span>root</span>
+                      <ArabicText className="text-sm">{w.root}</ArabicText>
+                      {typeof w.root_count === "number" && (
+                        <span
+                          className={
+                            w.root_count >= 20 ? "font-medium text-waraq" : ""
+                          }
+                        >
+                          · {w.root_count}×
+                        </span>
+                      )}
+                    </Link>
+                  )}
                 </div>
                 {w.verse_key && (
                   <Link
