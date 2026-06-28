@@ -385,12 +385,18 @@ export interface RareWord {
   root_count?: number | null; // total occurrences of that root in the Quran
 }
 
-export interface RareWords {
-  words: RareWord[];
-  total: number;
-  page: number;
-  page_size: number;
+export interface RareRoot {
+  root: string;
+  root_key: string;
+  transliteration: string;
+  meaning: string;
+  count: number;
+  verse_key: string | null;
 }
+
+export type RareResult =
+  | { mode: "lemma"; words: RareWord[]; total: number; page: number; page_size: number }
+  | { mode: "root"; words: RareRoot[]; total: number; page: number; page_size: number };
 
 export interface VerseLength {
   number: number;

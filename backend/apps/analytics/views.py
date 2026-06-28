@@ -162,10 +162,24 @@ def rare_words_view(request):
             errors=[{"message": "'threshold' and 'page' must be integers."}],
             status=status.HTTP_400_BAD_REQUEST,
         )
+    by = request.query_params.get("by", "lemma")
+    if by not in ("lemma", "root"):
+        by = "lemma"
     offset = (page - 1) * RARE_WORDS_PAGE_SIZE
 
     def compute():
+        if by == "root":
+            return {
+                "mode": "root",
+                "words": services.find_rare_roots(
+                    max_count=threshold, limit=RARE_WORDS_PAGE_SIZE, offset=offset
+                ),
+                "total": services.count_rare_roots(max_count=threshold),
+                "page": page,
+                "page_size": RARE_WORDS_PAGE_SIZE,
+            }
         return {
+            "mode": "lemma",
             "words": services.find_rare_words(
                 max_count=threshold, limit=RARE_WORDS_PAGE_SIZE, offset=offset
             ),
@@ -174,7 +188,9 @@ def rare_words_view(request):
             "page_size": RARE_WORDS_PAGE_SIZE,
         }
 
-    return _cached("rare-words", {"threshold": threshold, "page": page}, compute)
+    return _cached(
+        "rare-words", {"threshold": threshold, "page": page, "by": by}, compute
+    )
 
 
 @api_view(["GET"])
