@@ -17,6 +17,11 @@ export default function RootAnalyzePage({
           { label: "كتب", href: "/analyze/root?root=كتب" },
           { label: "علم", href: "/analyze/root?root=علم" },
           { label: "رحم", href: "/analyze/root?root=رحم" },
+          { label: "ملك", href: "/analyze/root?root=ملك" },
+          { label: "نور", href: "/analyze/root?root=نور" },
+          { label: "صبر", href: "/analyze/root?root=صبر" },
+          { label: "حمد", href: "/analyze/root?root=حمد" },
+          { label: "سلم", href: "/analyze/root?root=سلم" },
         ]}
       />
       <RootExplorer initialRoot={searchParams.root ?? ""} />

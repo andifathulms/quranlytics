@@ -17,6 +17,11 @@ export default function WordAnalyzePage({
           { label: "ٱللَّه", href: "/analyze/word?word=الله" },
           { label: "يوم", href: "/analyze/word?word=يوم" },
           { label: "رحمة", href: "/analyze/word?word=رحمة" },
+          { label: "نور", href: "/analyze/word?word=نور" },
+          { label: "قلب", href: "/analyze/word?word=قلب" },
+          { label: "صبر", href: "/analyze/word?word=صبر" },
+          { label: "جنة", href: "/analyze/word?word=جنة" },
+          { label: "علم", href: "/analyze/word?word=علم" },
         ]}
       />
       <WordSearch initialWord={searchParams.word ?? ""} />
