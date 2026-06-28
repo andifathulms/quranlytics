@@ -15,16 +15,23 @@ import { WordTooltip } from "./WordTooltip";
 // One verse: clickable Arabic words (RTL) on top, EN + ID translations below.
 // When `tajwid` segments are supplied, the Arabic is rendered as colour-coded
 // spans instead of per-word buttons (the two modes are mutually exclusive).
+// Strip Arabic diacritics/tatweel so a deep-linked word matches the vowelled
+// surface form in the verse.
+const stripAr = (s: string) =>
+  s.replace(/[ؐ-ًؚ-ٰٟۖ-ۭـ]/g, "");
+
 export function VerseRow({
   verse,
   tajwid,
   ruleColors,
   hidden = false,
+  highlightWord,
 }: {
   verse: Verse;
   tajwid?: TajwidSegment[];
   ruleColors?: Record<string, string>;
   hidden?: boolean;
+  highlightWord?: string;
 }) {
   const [words, setWords] = useState<Word[] | null>(verse.words ?? null);
   const [activeId, setActiveId] = useState<number | null>(null);
@@ -67,6 +74,18 @@ export function VerseRow({
     return () => obs.disconnect();
   }, [recordRead, verse.surah_number, verse.number]);
 
+  // Deep-link highlight: load this verse's words so the targeted one can be
+  // marked, and decide which word(s) match.
+  useEffect(() => {
+    if (highlightWord) ensureWords();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [highlightWord]);
+
+  const hlNorm = highlightWord ? stripAr(highlightWord) : "";
+  const isHl = (w: Word) =>
+    !!hlNorm &&
+    (stripAr(w.lemma || "") === hlNorm || stripAr(w.arabic).includes(hlNorm));
+
   const activeWord = words?.find((w) => w.id === activeId) ?? null;
 
   const en = verse.translations.find((t) => t.language === "en");
@@ -88,6 +107,7 @@ export function VerseRow({
   return (
     <article
       ref={articleRef}
+      id={`${verse.surah_number}-${verse.number}`}
       className={`scroll-mt-20 rounded-lg border-b border-sand px-3 py-6 transition-colors dark:border-khatulistiwa/30 ${
         isPlaying ? "bg-waraq/10 ring-1 ring-waraq/40" : ""
       }`}
@@ -122,7 +142,7 @@ export function VerseRow({
         onMouseEnter={tajwid || concealed ? undefined : ensureWords}
       >
         {tajwid ? (
-          <ArabicText className="text-3xl leading-loose">
+          <ArabicText className="quran-verse leading-loose">
             {tajwid.map((s, i) => (
               <span
                 key={i}
@@ -141,15 +161,17 @@ export function VerseRow({
                 anchorRef.current = e.currentTarget;
                 setActiveId(activeId === w.id ? null : w.id);
               }}
-              className="rounded px-1 transition-colors hover:bg-waraq/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              className={`rounded px-1 transition-colors hover:bg-waraq/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${
+                isHl(w) ? "bg-waraq/40 ring-1 ring-waraq" : ""
+              }`}
             >
-              <ArabicText className="text-3xl leading-loose">
+              <ArabicText className="quran-verse leading-loose">
                 {w.arabic}
               </ArabicText>
             </button>
           ))
         ) : (
-          <ArabicText className="text-3xl leading-loose">
+          <ArabicText className="quran-verse leading-loose">
             {verse.text_uthmani}
           </ArabicText>
         )}

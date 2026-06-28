@@ -31,7 +31,9 @@ export function SurahBrowser({ surahs }: { surahs: Surah[] }) {
   return (
     <section className="space-y-4">
       {progress?.last_verse_key && (
-        <Link href={`/${progress.last_surah}`}>
+        <Link
+          href={`/${progress.last_surah}#${progress.last_surah}-${progress.last_verse}`}
+        >
           <Card
             variant="interactive"
             className="flex items-center justify-between bg-khatulistiwa/5"

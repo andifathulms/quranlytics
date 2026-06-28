@@ -22,7 +22,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${inter.variable} ${amiriQuran.variable} ${playfair.variable} ${jetbrainsMono.variable} font-sans min-h-screen bg-parchment text-lapis transition-colors dark:bg-lapis dark:text-parchment`}
+        className={`${inter.variable} ${amiriQuran.variable} ${playfair.variable} ${jetbrainsMono.variable} font-sans min-h-screen bg-bg text-fg transition-colors`}
       >
         <Providers>
           <SkipLink />

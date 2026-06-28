@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
+import { KhatmahCard } from "@/components/reader/KhatmahCard";
 import { StreakHeatmap } from "@/components/reader/StreakHeatmap";
 import { Badge, Card } from "@/components/ui/Card";
 import { useAuth } from "@/lib/auth/AuthContext";
@@ -111,6 +112,8 @@ export default function DashboardPage() {
           onSet={setReadingGoal}
         />
       )}
+
+      {progress && <KhatmahCard progress={progress} />}
 
       {progress && progress.reading_days.length > 0 && (
         <StreakHeatmap readingDays={progress.reading_days} />

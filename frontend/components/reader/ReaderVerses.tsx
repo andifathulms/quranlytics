@@ -1,19 +1,35 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
 import { api } from "@/lib/api/client";
 import type { SurahTajwid, TajwidSegment, Verse } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { RECITERS } from "@/lib/audio";
+import { useFullscreen } from "@/lib/hooks/useFullscreen";
 import { usePersistentToggle } from "@/lib/hooks/usePersistentToggle";
 import { useToast } from "@/lib/toast/ToastContext";
 
 import { ReaderAudioProvider, useReaderAudio } from "./ReaderAudio";
+import { ReaderSettingsSheet } from "./ReaderSettingsSheet";
 import { READING_MODE_KEY, ReadingFlow } from "./ReadingFlow";
 import { VerseRow } from "./VerseRow";
 
 const STORAGE_KEY = "quranlytics:tajwid";
+
+// Scroll a verse anchor (id="{surah}-{ayah}") into view and flash it briefly.
+// Returns false when the anchor isn't present (e.g. out-of-range verse).
+function flashScrollTo(id: string): boolean {
+  const el = document.getElementById(id);
+  if (!el) return false;
+  el.scrollIntoView({ block: "center", behavior: "smooth" });
+  el.classList.add("ring-2", "ring-waraq", "rounded-lg");
+  window.setTimeout(
+    () => el.classList.remove("ring-2", "ring-waraq", "rounded-lg"),
+    2000,
+  );
+  return true;
+}
 
 // Wraps the surah's verses with the recitation player and an optional tajwīd
 // colour-coding layer.
@@ -30,6 +46,40 @@ export function ReaderVerses({
   const [memorize, setMemorize] = useState(false);
   const [hideText, setHideText] = useState(false);
   const [reading, toggleReading] = usePersistentToggle(READING_MODE_KEY);
+  const fs = useFullscreen();
+
+  const maxAyah = verses.length
+    ? Math.max(...verses.map((v) => v.number))
+    : 0;
+
+  // Verse-number lookup: "5" shows ayah 5, "3-9" shows ayahs 3–9. null = all.
+  const [range, setRange] = useState<{ from: number; to: number } | null>(null);
+  const visible = useMemo(
+    () =>
+      range
+        ? verses.filter((v) => v.number >= range.from && v.number <= range.to)
+        : verses,
+    [verses, range],
+  );
+
+  // Deep-link support: when arriving with a #{surah}-{ayah} hash (e.g. from the
+  // global search "2:255" or the surah list "continue reading"), scroll to it
+  // once the verses have laid out. Native hash scrolling is unreliable here
+  // because reading-mode is restored from localStorage after mount. An optional
+  // ?hl=<word> highlights a specific word in that verse (root explorer, rare
+  // words, etc.).
+  const [highlight, setHighlight] = useState<{ key: string; word: string } | null>(
+    null,
+  );
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const hash = window.location.hash.slice(1);
+    if (!hash) return;
+    const hl = new URLSearchParams(window.location.search).get("hl");
+    if (hl) setHighlight({ key: hash, word: hl });
+    const t = window.setTimeout(() => flashScrollTo(hash), 200);
+    return () => window.clearTimeout(t);
+  }, []);
 
   // This surah's reading progress (for the header), and a one-time nudge when
   // the daily goal is reached while reading.
@@ -92,6 +142,7 @@ export function ReaderVerses({
 
   return (
     <ReaderAudioProvider verses={verses}>
+      <div ref={fs.ref} className="reader-immersive">
       {progress && furthest > 0 && (
         <div className="mb-4 flex items-center gap-3 text-sm">
           <span className={surahCompleted ? "text-[#1e7e44] dark:text-emerald" : "text-muted"}>
@@ -120,6 +171,21 @@ export function ReaderVerses({
         >
           📖 Reading mode {reading ? "on" : "off"}
         </button>
+        <ReaderSettingsSheet />
+        {fs.supported && (
+          <button
+            onClick={fs.toggle}
+            aria-pressed={fs.active}
+            className={`rounded-lg border px-3 py-1.5 text-sm transition-colors ${
+              fs.active
+                ? "border-waraq bg-waraq/15 text-waraq"
+                : "border-sand text-lapis/70 hover:text-lapis dark:text-parchment/70"
+            }`}
+            title="Distraction-free reading"
+          >
+            ⤢ {fs.active ? "Exit" : "Immersive"}
+          </button>
+        )}
         {!reading && (
           <>
             <button
@@ -149,6 +215,13 @@ export function ReaderVerses({
         {on && loading && (
           <span className="text-xs text-muted">Loading colours…</span>
         )}
+        <span className="mx-1 ml-auto hidden h-4 w-px bg-sand sm:inline-block" />
+        <VerseRangeFilter
+          surahId={surahId}
+          maxAyah={maxAyah}
+          range={range}
+          onApply={setRange}
+        />
       </div>
 
       {!reading && memorize && (
@@ -176,22 +249,141 @@ export function ReaderVerses({
         </div>
       )}
 
-      {reading ? (
-        <ReadingFlow verses={verses} />
+      {range && (
+        <div className="mb-3 flex items-center gap-3 text-sm text-muted">
+          <span>
+            Showing{" "}
+            {range.from === range.to
+              ? `ayah ${range.from}`
+              : `ayahs ${range.from}–${range.to}`}{" "}
+            of {maxAyah}
+          </span>
+          <button
+            onClick={() => setRange(null)}
+            className="rounded border border-sand px-2 py-0.5 text-xs hover:text-khatulistiwa"
+          >
+            Show all
+          </button>
+        </div>
+      )}
+
+      {visible.length === 0 ? (
+        <p className="py-8 text-center text-sm text-muted">
+          No verse in that range.
+        </p>
+      ) : reading ? (
+        <ReadingFlow verses={visible} />
       ) : (
         <section>
-          {verses.map((v) => (
+          {visible.map((v) => (
             <VerseRow
               key={v.id}
               verse={v}
               tajwid={active ? segmentsByKey[v.verse_key] : undefined}
               ruleColors={active ? ruleColors : undefined}
               hidden={memorize && hideText}
+              highlightWord={
+                highlight?.key === `${v.surah_number}-${v.number}`
+                  ? highlight.word
+                  : undefined
+              }
             />
           ))}
         </section>
       )}
+      </div>
     </ReaderAudioProvider>
+  );
+}
+
+// Parse a verse-number lookup: "5" → ayah 5, "3-9" (or "3–9") → ayahs 3–9.
+// Returns null for anything outside 1..maxAyah or a backwards range.
+function parseRange(
+  raw: string,
+  maxAyah: number,
+): { from: number; to: number } | null {
+  const m = raw.trim().match(/^(\d{1,3})\s*[-–]\s*(\d{1,3})$/);
+  if (m) {
+    const from = Number(m[1]);
+    const to = Number(m[2]);
+    if (from >= 1 && to <= maxAyah && from <= to) return { from, to };
+    return null;
+  }
+  if (/^\d{1,3}$/.test(raw.trim())) {
+    const n = Number(raw.trim());
+    if (n >= 1 && n <= maxAyah) return { from: n, to: n };
+  }
+  return null;
+}
+
+// Look up a verse or verse range within this surah and show only those ayāt.
+// Accepts a single number ("5") or a range ("3-9").
+function VerseRangeFilter({
+  surahId,
+  maxAyah,
+  range,
+  onApply,
+}: {
+  surahId: number;
+  maxAyah: number;
+  range: { from: number; to: number } | null;
+  onApply: (r: { from: number; to: number } | null) => void;
+}) {
+  const [val, setVal] = useState("");
+  const [err, setErr] = useState(false);
+
+  function go(e: FormEvent) {
+    e.preventDefault();
+    const parsed = parseRange(val, maxAyah);
+    if (!parsed) {
+      setErr(true);
+      return;
+    }
+    setErr(false);
+    onApply(parsed);
+    // Bring the looked-up verse to the top once it has rendered.
+    window.setTimeout(() => flashScrollTo(`${surahId}-${parsed.from}`), 60);
+  }
+
+  return (
+    <form onSubmit={go} className="flex items-center gap-1.5">
+      <label htmlFor="verse-lookup" className="text-sm text-muted">
+        Verse
+      </label>
+      <input
+        id="verse-lookup"
+        inputMode="numeric"
+        value={val}
+        onChange={(e) => {
+          setVal(e.target.value);
+          setErr(false);
+        }}
+        placeholder={`e.g. 5 or 3-9`}
+        aria-label={`Look up a verse or range (1 to ${maxAyah})`}
+        aria-invalid={err}
+        className={`w-28 rounded-lg border bg-surface px-2 py-1.5 text-sm text-fg focus:outline-none ${
+          err ? "border-red-500" : "border-sand focus:border-khatulistiwa"
+        }`}
+      />
+      <button
+        type="submit"
+        className="rounded-lg border border-khatulistiwa px-2.5 py-1.5 text-sm text-khatulistiwa hover:bg-sand/40"
+      >
+        Go
+      </button>
+      {range && (
+        <button
+          type="button"
+          onClick={() => {
+            onApply(null);
+            setVal("");
+          }}
+          className="text-xs text-muted hover:text-khatulistiwa"
+        >
+          clear
+        </button>
+      )}
+    </form>
   );
 }
 

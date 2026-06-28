@@ -90,6 +90,13 @@ export function Popover({
 
   if (!mounted || !open) return null;
 
+  // When a reader is in fullscreen ("immersive") mode, only that element's
+  // subtree is rendered — a portal to document.body would be invisible. Render
+  // into the current fullscreen element instead, when there is one.
+  const fsDoc = document as Document & { webkitFullscreenElement?: Element | null };
+  const portalTarget =
+    fsDoc.fullscreenElement ?? fsDoc.webkitFullscreenElement ?? document.body;
+
   const panel = (
     <div
       ref={panelRef}
@@ -136,6 +143,6 @@ export function Popover({
       />
       {panel}
     </>,
-    document.body,
+    portalTarget,
   );
 }

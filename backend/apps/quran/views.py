@@ -15,10 +15,7 @@ from apps.common.throttles import ProxyRateThrottle
 
 from apps.common.arabic import normalize_search
 from apps.common.envelope import envelope
-from apps.common.pagination import (
-    EnvelopePageNumberPagination,
-    VerseCursorPagination,
-)
+from apps.common.pagination import EnvelopePageNumberPagination
 
 from .models import Surah, Translation, Verse, Word
 from .serializers import (
@@ -62,10 +59,16 @@ class SurahDetailView(RetrieveAPIView):
 
 
 class SurahVersesView(ListAPIView):
-    """GET /surahs/{number}/verses/ — verses with translations (paginated)."""
+    """GET /surahs/{number}/verses/ — all verses of a surah with translations.
+
+    A surah is bounded (the longest, Al-Baqarah, has 286 verses), so we return
+    them all in one response — consistent with the juzʾ and page readers. This
+    is required for continuous recitation, reading mode, ḥifẓ looping, and
+    jump-to-verse, all of which need the whole surah present in the DOM.
+    """
 
     serializer_class = VerseSerializer
-    pagination_class = VerseCursorPagination
+    pagination_class = None
 
     def get_queryset(self):
         number = self.kwargs["number"]
@@ -83,6 +86,10 @@ class SurahVersesView(ListAPIView):
             )
             .order_by(*ordering)
         )
+
+    def list(self, request, *args, **kwargs):
+        data = self.get_serializer(self.get_queryset(), many=True).data
+        return envelope(data, meta={"count": len(data)})
 
 
 class JuzVersesView(ListAPIView):

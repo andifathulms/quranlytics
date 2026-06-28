@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 import { ShareDiscoveryButton } from "@/components/community/ShareDiscoveryButton";
@@ -113,8 +114,16 @@ export function RootExplorer({ initialRoot = "" }: { initialRoot?: string }) {
                       </ArabicText>
                     ))}
                   </div>
-                  <div className="mt-2 font-mono text-xs text-muted">
-                    {d.sample_verses.join(" · ")}
+                  <div className="mt-2 flex flex-wrap gap-x-2 gap-y-1 font-mono text-xs">
+                    {d.sample_verses.map((key) => (
+                      <Link
+                        key={key}
+                        href={`/${key.split(":")[0]}?hl=${encodeURIComponent(d.lemma)}#${key.replace(":", "-")}`}
+                        className="text-khatulistiwa hover:underline"
+                      >
+                        {key}
+                      </Link>
+                    ))}
                   </div>
                 </Card>
               ))}

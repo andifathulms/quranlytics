@@ -29,6 +29,22 @@ def _surah_name_map() -> dict[int, str]:
     }
 
 
+def _lemma_forms(word: str) -> set[str]:
+    """Lemma/root candidates for a user-typed word.
+
+    Lemmas and roots are stored normalized (tashkeel stripped, hamza/alef
+    unified), so we normalize the input the same way. We also add the form
+    without a leading definite article ``ال`` so a hand-typed ``الليل`` still
+    matches the lemma ``ليل`` (and ``الكتب`` the root ``كتب``) — but only when
+    enough of the word remains, to avoid mangling short words (e.g. ``الله``).
+    """
+    n = normalize_search(word)
+    forms = {n}
+    if n.startswith("ال") and len(n) >= 5:
+        forms.add(n[2:])
+    return forms
+
+
 def get_word_frequency(word: str | None = None, root: str | None = None) -> dict[str, Any]:
     """Total count + per-surah distribution from the materialised cache.
 
@@ -45,17 +61,22 @@ def get_word_frequency(word: str | None = None, root: str | None = None) -> dict
         root_norm = normalize_search(root)
         freq = (
             WordFrequency.objects.select_related("root")
-            .filter(root__root_arabic=root_norm)
+            .filter(root__root_arabic__in=_lemma_forms(root))
+            .order_by("-total_count")
             .first()
         )
         label = root_norm
     else:
         # Word frequency keys are normalized (see ingest_words); normalize the
-        # query the same way so user input matches.
+        # query the same way (and tolerate a leading ال) so user input matches.
         word_norm = normalize_search(word)
-        freq = WordFrequency.objects.filter(
-            root__isnull=True, lemma=word_norm
-        ).first()
+        freq = (
+            WordFrequency.objects.filter(
+                root__isnull=True, lemma__in=_lemma_forms(word)
+            )
+            .order_by("-total_count")
+            .first()
+        )
         label = word_norm
 
     if freq is None:
@@ -81,7 +102,9 @@ def get_word_frequency(word: str | None = None, root: str | None = None) -> dict
 def get_root_tree(root_arabic: str) -> dict[str, Any]:
     """All words derived from a trilateral root, grouped by lemma."""
     root_norm = normalize_search(root_arabic)
-    root_obj = WordRoot.objects.filter(root_arabic=root_norm).first()
+    root_obj = (
+        WordRoot.objects.filter(root_arabic__in=_lemma_forms(root_arabic)).first()
+    )
     if root_obj is None:
         return {"root": root_norm, "meaning": "", "derivatives": []}
 
@@ -122,12 +145,12 @@ def get_root_tree(root_arabic: str) -> dict[str, Any]:
 
 def get_cooccurrence(word1: str, word2: str) -> dict[str, Any]:
     """All verses containing both word1 AND word2 (matched on lemma or surface)."""
-    w1, w2 = normalize_search(word1), normalize_search(word2)
+    f1, f2 = _lemma_forms(word1), _lemma_forms(word2)
     verses = (
         Verse.objects.filter(
-            Q(words__lemma=w1) | Q(words__arabic__icontains=word1)
+            Q(words__lemma__in=f1) | Q(words__arabic__icontains=word1)
         )
-        .filter(Q(words__lemma=w2) | Q(words__arabic__icontains=word2))
+        .filter(Q(words__lemma__in=f2) | Q(words__arabic__icontains=word2))
         .select_related("surah")
         .prefetch_related("translations")
         .distinct()

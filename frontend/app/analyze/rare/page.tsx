@@ -77,7 +77,7 @@ export default function RareWordsPage() {
               </div>
               {w.verse_key && (
                 <Link
-                  href={`/${w.verse_key.split(":")[0]}`}
+                  href={`/${w.verse_key.split(":")[0]}?hl=${encodeURIComponent(w.lemma)}#${w.verse_key.replace(":", "-")}`}
                   className="font-mono text-xs text-khatulistiwa hover:underline"
                 >
                   {w.verse_key}
