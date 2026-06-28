@@ -15,6 +15,15 @@ import type { Cooccurrence } from "@/lib/api/types";
 import { ArabicKeyboard } from "./ArabicKeyboard";
 import { VerseList } from "./VerseList";
 
+// Ready-made word pairs so the tool can be tried without typing Arabic.
+const EXAMPLES: { w1: string; w2: string; label: string }[] = [
+  { w1: "رحمة", w2: "عذاب", label: "mercy ∩ punishment" },
+  { w1: "الجنة", w2: "النار", label: "paradise ∩ fire" },
+  { w1: "السماء", w2: "الأرض", label: "heaven ∩ earth" },
+  { w1: "الدنيا", w2: "الآخرة", label: "this world ∩ hereafter" },
+  { w1: "الليل", w2: "النهار", label: "night ∩ day" },
+];
+
 // Find every verse where two words co-occur (e.g. رحمة + عذاب).
 export function CooccurrenceSearch() {
   const [w1, setW1] = useState("");
@@ -24,12 +33,12 @@ export function CooccurrenceSearch() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function run() {
-    if (!w1.trim() || !w2.trim()) return;
+  async function run(a = w1, b = w2) {
+    if (!a.trim() || !b.trim()) return;
     setLoading(true);
     setError(null);
     try {
-      const res = await api.cooccurrence(w1.trim(), w2.trim());
+      const res = await api.cooccurrence(a.trim(), b.trim());
       setResult(res.data);
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Search failed");
@@ -37,6 +46,12 @@ export function CooccurrenceSearch() {
     } finally {
       setLoading(false);
     }
+  }
+
+  function tryExample(a: string, b: string) {
+    setW1(a);
+    setW2(b);
+    run(a, b);
   }
 
   const insert = (ch: string) =>
@@ -73,9 +88,26 @@ export function CooccurrenceSearch() {
         </Button>
       </form>
 
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xs text-muted">Try:</span>
+        {EXAMPLES.map((ex) => (
+          <button
+            key={ex.label}
+            type="button"
+            onClick={() => tryExample(ex.w1, ex.w2)}
+            className="rounded-full border border-sand px-3 py-1 text-xs text-muted transition-colors hover:border-khatulistiwa hover:text-khatulistiwa"
+          >
+            <span dir="rtl" className="font-quran">
+              {ex.w1} ∩ {ex.w2}
+            </span>
+            <span className="ml-1.5 text-[10px] opacity-70">{ex.label}</span>
+          </button>
+        ))}
+      </div>
+
       <ArabicKeyboard onInsert={insert} />
 
-      {error && <ErrorBanner message={error} onRetry={run} />}
+      {error && <ErrorBanner message={error} onRetry={() => run()} />}
 
       {result && (
         <div className="space-y-4">
