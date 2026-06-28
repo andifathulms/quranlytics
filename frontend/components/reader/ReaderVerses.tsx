@@ -65,11 +65,18 @@ export function ReaderVerses({
   // Deep-link support: when arriving with a #{surah}-{ayah} hash (e.g. from the
   // global search "2:255" or the surah list "continue reading"), scroll to it
   // once the verses have laid out. Native hash scrolling is unreliable here
-  // because reading-mode is restored from localStorage after mount.
+  // because reading-mode is restored from localStorage after mount. An optional
+  // ?hl=<word> highlights a specific word in that verse (root explorer, rare
+  // words, etc.).
+  const [highlight, setHighlight] = useState<{ key: string; word: string } | null>(
+    null,
+  );
   useEffect(() => {
     if (typeof window === "undefined") return;
     const hash = window.location.hash.slice(1);
     if (!hash) return;
+    const hl = new URLSearchParams(window.location.search).get("hl");
+    if (hl) setHighlight({ key: hash, word: hl });
     const t = window.setTimeout(() => flashScrollTo(hash), 200);
     return () => window.clearTimeout(t);
   }, []);
@@ -275,6 +282,11 @@ export function ReaderVerses({
               tajwid={active ? segmentsByKey[v.verse_key] : undefined}
               ruleColors={active ? ruleColors : undefined}
               hidden={memorize && hideText}
+              highlightWord={
+                highlight?.key === `${v.surah_number}-${v.number}`
+                  ? highlight.word
+                  : undefined
+              }
             />
           ))}
         </section>
