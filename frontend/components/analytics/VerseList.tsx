@@ -13,7 +13,7 @@ export function VerseList({ verses }: { verses: Verse[] }) {
         return (
           <article key={v.id} className="py-4">
             <Link
-              href={`/${v.surah_number}`}
+              href={`/${v.surah_number}#${v.surah_number}-${v.number}`}
               className="font-mono text-xs text-khatulistiwa hover:underline"
             >
               {v.verse_key}
@@ -23,8 +23,8 @@ export function VerseList({ verses }: { verses: Verse[] }) {
                 {v.text_uthmani}
               </ArabicText>
             </div>
-            {en && <p className="mt-2 text-sm text-lapis/90">{en.text}</p>}
-            {id && <p className="text-sm text-lapis/70">{id.text}</p>}
+            {en && <p className="mt-2 text-sm text-fg">{en.text}</p>}
+            {id && <p className="text-sm text-muted">{id.text}</p>}
           </article>
         );
       })}
