@@ -17,7 +17,7 @@ from apps.common.arabic import normalize_search
 from apps.common.envelope import envelope
 from apps.common.pagination import EnvelopePageNumberPagination
 
-from .models import Surah, Translation, Verse, Word
+from .models import Surah, TafsirEntry, Translation, Verse, Word
 from .serializers import (
     SurahDetailSerializer,
     SurahSerializer,
@@ -253,10 +253,12 @@ def _tafsir_id(key: str) -> dict:
 @api_view(["GET"])
 @throttle_classes([ProxyRateThrottle])
 def tafsir_view(request):
-    """GET /tafsir/?key=1:1&lang=en|id — tafsir for a verse (cached 24h).
+    """GET /tafsir/?key=1:1&lang=en|id — tafsir for a verse.
 
     EN: Ibn Kathir via quran.com. ID: Kemenag via equran.id. Tafsir is static,
-    so results are cached.
+    so the first fetch is persisted in the DB (TafsirEntry) and every later
+    request is served from there — the upstream API is hit at most once per
+    verse+language, ever.
     """
     key = (request.query_params.get("key") or "").strip()
     lang = request.query_params.get("lang", "en")
@@ -272,10 +274,18 @@ def tafsir_view(request):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
-    cache_key = f"tafsir:{lang}:{key}"
-    cached = cache.get(cache_key)
-    if cached is not None:
-        return envelope(cached, meta={"cache": "HIT"}, headers={"X-Cache": "HIT"})
+    stored = TafsirEntry.objects.filter(verse_key=key, language=lang).first()
+    if stored is not None:
+        return envelope(
+            {
+                "verse_key": stored.verse_key,
+                "language": stored.language,
+                "resource_name": stored.resource_name,
+                "text": stored.text,
+            },
+            meta={"cache": "DB"},
+            headers={"X-Cache": "HIT"},
+        )
     try:
         data = fetchers[lang](key)
     except requests.RequestException:
@@ -283,5 +293,12 @@ def tafsir_view(request):
             errors=[{"message": _UNAVAILABLE}],
             status=status.HTTP_502_BAD_GATEWAY,
         )
-    cache.set(cache_key, data, settings.ANALYTICS_CACHE_TTL)
+    TafsirEntry.objects.update_or_create(
+        verse_key=key,
+        language=lang,
+        defaults={
+            "resource_name": data.get("resource_name", ""),
+            "text": data.get("text", ""),
+        },
+    )
     return envelope(data, meta={"cache": "MISS"}, headers={"X-Cache": "MISS"})

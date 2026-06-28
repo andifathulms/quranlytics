@@ -1,9 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
-import { Badge } from "@/components/ui/Card";
+import { Badge, Card } from "@/components/ui/Card";
 import type { SurahStatRow } from "@/lib/api/types";
+
+type SortDir = "none" | "desc" | "asc";
 
 type Metric = keyof Pick<
   SurahStatRow,
@@ -24,13 +27,29 @@ const METRICS: { key: Metric; label: string }[] = [
 
 export function StatsDashboard({ rows }: { rows: SurahStatRow[] }) {
   const [metric, setMetric] = useState<Metric>("word_count");
-  const [sortDesc, setSortDesc] = useState(false);
+  const [sortDir, setSortDir] = useState<SortDir>("none");
   const [selected, setSelected] = useState<number | null>(null);
+
+  const metricLabel = METRICS.find((m) => m.key === metric)?.label ?? "";
 
   const max = useMemo(
     () => Math.max(1, ...rows.map((r) => r[metric])),
     [rows, metric],
   );
+
+  // Highlights for the current metric: largest, smallest, and average surah.
+  const highlight = useMemo(() => {
+    if (!rows.length) return null;
+    let hi = rows[0];
+    let lo = rows[0];
+    let sum = 0;
+    for (const r of rows) {
+      if (r[metric] > hi[metric]) hi = r;
+      if (r[metric] < lo[metric]) lo = r;
+      sum += r[metric];
+    }
+    return { hi, lo, avg: Math.round(sum / rows.length) };
+  }, [rows, metric]);
 
   const totals = useMemo(
     () =>
@@ -46,9 +65,10 @@ export function StatsDashboard({ rows }: { rows: SurahStatRow[] }) {
   );
 
   const sorted = useMemo(() => {
-    if (!sortDesc) return rows;
-    return [...rows].sort((a, b) => b[metric] - a[metric]);
-  }, [rows, metric, sortDesc]);
+    if (sortDir === "none") return rows;
+    const dir = sortDir === "desc" ? -1 : 1;
+    return [...rows].sort((a, b) => (a[metric] - b[metric]) * dir);
+  }, [rows, metric, sortDir]);
 
   return (
     <div className="space-y-6">
@@ -75,12 +95,34 @@ export function StatsDashboard({ rows }: { rows: SurahStatRow[] }) {
         <Badge tone="blue">{totals.verses.toLocaleString()} total verses</Badge>
       </div>
 
+      {highlight && (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <HighlightCard
+            label={`Most ${metricLabel.toLowerCase()}`}
+            row={highlight.hi}
+            value={highlight.hi[metric]}
+          />
+          <HighlightCard
+            label={`Fewest ${metricLabel.toLowerCase()}`}
+            row={highlight.lo}
+            value={highlight.lo[metric]}
+          />
+          <Card>
+            <div className="text-xs uppercase tracking-wide text-muted">
+              Average per surah
+            </div>
+            <div className="mt-1 font-display text-2xl text-fg">
+              {highlight.avg.toLocaleString()}
+            </div>
+            <div className="text-xs text-muted">{metricLabel.toLowerCase()}</div>
+          </Card>
+        </div>
+      )}
+
       {/* Per-surah column chart (114 surahs, in Mushaf order). */}
       <div className="rounded-lg border border-border bg-lapis p-4">
         <div className="mb-2 flex flex-wrap items-center gap-3 text-xs text-parchment/70">
-          <span className="uppercase tracking-wide">
-            {METRICS.find((m) => m.key === metric)?.label} per surah
-          </span>
+          <span className="uppercase tracking-wide">{metricLabel} per surah</span>
           <span className="flex items-center gap-1">
             <i className="inline-block h-2 w-2 rounded-sm bg-waraq" /> Meccan
           </span>
@@ -129,23 +171,44 @@ export function StatsDashboard({ rows }: { rows: SurahStatRow[] }) {
             <tr>
               <th className="px-3 py-2">Surah</th>
               <th className="px-3 py-2">Type</th>
-              <th className="px-3 py-2 text-right" aria-sort={sortDesc ? "descending" : "none"}>
+              <th
+                className="px-3 py-2 text-right"
+                aria-sort={
+                  sortDir === "desc"
+                    ? "descending"
+                    : sortDir === "asc"
+                      ? "ascending"
+                      : "none"
+                }
+              >
                 <button
                   type="button"
-                  onClick={() => setSortDesc((s) => !s)}
+                  onClick={() =>
+                    setSortDir((s) =>
+                      s === "none" ? "desc" : s === "desc" ? "asc" : "none",
+                    )
+                  }
                   className="ml-auto flex items-center gap-1 rounded font-semibold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                  title="Sort"
                 >
-                  {METRICS.find((m) => m.key === metric)?.label}{" "}
-                  <span aria-hidden="true">{sortDesc ? "↓" : "·"}</span>
+                  {metricLabel}{" "}
+                  <span aria-hidden="true">
+                    {sortDir === "desc" ? "↓" : sortDir === "asc" ? "↑" : "·"}
+                  </span>
                 </button>
               </th>
             </tr>
           </thead>
           <tbody>
             {sorted.map((r) => (
-              <tr key={r.surah_id} className="border-t border-border">
+              <tr key={r.surah_id} className="border-t border-border hover:bg-surface-2">
                 <td className="px-3 py-1.5">
-                  {r.surah_id}. {r.surah_name}
+                  <Link
+                    href={`/${r.surah_id}`}
+                    className="hover:text-khatulistiwa hover:underline"
+                  >
+                    {r.surah_id}. {r.surah_name}
+                  </Link>
                 </td>
                 <td className="px-3 py-1.5 text-muted">
                   {r.revelation_type}
@@ -159,5 +222,29 @@ export function StatsDashboard({ rows }: { rows: SurahStatRow[] }) {
         </table>
       </div>
     </div>
+  );
+}
+
+function HighlightCard({
+  label,
+  row,
+  value,
+}: {
+  label: string;
+  row: SurahStatRow;
+  value: number;
+}) {
+  return (
+    <Link href={`/${row.surah_id}`}>
+      <Card variant="interactive">
+        <div className="text-xs uppercase tracking-wide text-muted">{label}</div>
+        <div className="mt-1 font-display text-2xl text-fg">
+          {value.toLocaleString()}
+        </div>
+        <div className="truncate text-xs text-muted">
+          {row.surah_id}. {row.surah_name}
+        </div>
+      </Card>
+    </Link>
   );
 }

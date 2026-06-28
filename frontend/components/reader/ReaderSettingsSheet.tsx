@@ -6,8 +6,16 @@ import {
   SCALE_MAX,
   SCALE_MIN,
   SPEEDS,
+  type TranslationMode,
   useReaderSettings,
 } from "@/lib/reader/ReaderSettings";
+
+const TRANSLATION_OPTS: { value: TranslationMode; label: string }[] = [
+  { value: "off", label: "Off" },
+  { value: "en", label: "EN" },
+  { value: "id", label: "ID" },
+  { value: "both", label: "Both" },
+];
 
 // A small "Display" popover that consolidates the reader's display + playback
 // preferences in one place instead of scattering them across the toolbar.
@@ -18,8 +26,8 @@ export function ReaderSettingsSheet() {
     arabicScale,
     incScale,
     decScale,
-    showTranslation,
-    setShowTranslation,
+    translations,
+    setTranslations,
     playbackRate,
     setPlaybackRate,
   } = useReaderSettings();
@@ -90,19 +98,30 @@ export function ReaderSettingsSheet() {
             </div>
           </div>
 
-          <label className="flex items-center justify-between gap-3 text-sm">
-            <span className="text-fg">Show translation</span>
-            <input
-              type="checkbox"
-              checked={showTranslation}
-              onChange={(e) => setShowTranslation(e.target.checked)}
-              className="h-4 w-4 accent-khatulistiwa"
-            />
-          </label>
-          <p className="-mt-2 text-xs text-muted">
-            In reading mode: show meaning under each page, or tap an ayah to
-            reveal it.
-          </p>
+          <div>
+            <div className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted">
+              Translation (reading mode)
+            </div>
+            <div className="flex gap-1">
+              {TRANSLATION_OPTS.map((o) => (
+                <button
+                  key={o.value}
+                  onClick={() => setTranslations(o.value)}
+                  aria-pressed={translations === o.value}
+                  className={`flex-1 rounded-lg border px-1 py-1.5 text-xs transition-colors ${
+                    translations === o.value
+                      ? "border-waraq bg-waraq/15 text-waraq"
+                      : "border-sand text-muted hover:bg-surface-2"
+                  }`}
+                >
+                  {o.label}
+                </button>
+              ))}
+            </div>
+            <p className="mt-1 text-xs text-muted">
+              When Off, tap an ayah to reveal its translation.
+            </p>
+          </div>
 
           <div>
             <div className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted">

@@ -34,15 +34,21 @@ function byPage(verses: Verse[]): { page: number; verses: Verse[] }[] {
   return groups;
 }
 
-// English + Indonesian translation of a verse, shown inline (density toggle) or
-// inside the tap-to-reveal popover.
-function VerseMeaning({ verse }: { verse: Verse }) {
+// Translation of a verse, limited to the chosen language(s). Used inline (the
+// density toggle) and inside the tap-to-reveal popover (which always shows both).
+function VerseMeaning({
+  verse,
+  show = "both",
+}: {
+  verse: Verse;
+  show?: "en" | "id" | "both";
+}) {
   const en = verse.translations.find((t) => t.language === "en");
   const id = verse.translations.find((t) => t.language === "id");
   return (
     <div className="space-y-1">
-      {en && <p className="text-sm text-fg">{en.text}</p>}
-      {id && <p className="text-sm text-muted">{id.text}</p>}
+      {show !== "id" && en && <p className="text-sm text-fg">{en.text}</p>}
+      {show !== "en" && id && <p className="text-sm text-muted">{id.text}</p>}
     </div>
   );
 }
@@ -134,7 +140,8 @@ function FlowAyah({ verse, tappable }: { verse: Verse; tappable: boolean }) {
 // end on verse boundaries. The Uthmani text is rendered verbatim; the ayah
 // marker is appended after each verse, never inserted into the text.
 export function ReadingFlow({ verses }: { verses: Verse[] }) {
-  const { showTranslation } = useReaderSettings();
+  const { translations } = useReaderSettings();
+  const showInline = translations !== "off";
   const pages = byPage(verses);
 
   return (
@@ -149,18 +156,18 @@ export function ReadingFlow({ verses }: { verses: Verse[] }) {
             style={{ textAlignLast: "right" }}
           >
             {pageVerses.map((v) => (
-              <FlowAyah key={v.id} verse={v} tappable={!showTranslation} />
+              <FlowAyah key={v.id} verse={v} tappable={!showInline} />
             ))}
           </ArabicText>
 
-          {showTranslation && (
+          {showInline && (
             <div className="mt-6 space-y-4 border-t border-sand pt-4 dark:border-khatulistiwa/30">
               {pageVerses.map((v) => (
                 <div key={v.id} className="flex gap-3">
                   <span className="mt-0.5 shrink-0 font-mono text-xs text-muted">
                     {v.verse_key}
                   </span>
-                  <VerseMeaning verse={v} />
+                  <VerseMeaning verse={v} show={translations} />
                 </div>
               ))}
             </div>

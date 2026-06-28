@@ -20,19 +20,23 @@ const SCALE_STEP = 0.1;
 
 export const SPEEDS = [0.75, 1, 1.25, 1.5] as const;
 
+// Which translation(s) to show in reading mode. "off" keeps the clean mushaf.
+export type TranslationMode = "off" | "en" | "id" | "both";
+
 interface ReaderSettingsApi {
   arabicScale: number; // multiplier on the base Arabic font size
   incScale: () => void;
   decScale: () => void;
-  showTranslation: boolean; // show translations inline in reading mode
-  setShowTranslation: (b: boolean) => void;
+  translations: TranslationMode; // which translations to show in reading mode
+  setTranslations: (m: TranslationMode) => void;
   playbackRate: number; // recitation speed
   setPlaybackRate: (n: number) => void;
 }
 
 interface Persisted {
   arabicScale?: number;
-  showTranslation?: boolean;
+  translations?: TranslationMode;
+  showTranslation?: boolean; // legacy boolean — migrated to translations
   playbackRate?: number;
 }
 
@@ -47,7 +51,7 @@ export function ReaderSettingsProvider({
   children: React.ReactNode;
 }) {
   const [arabicScale, setArabicScale] = useState(1);
-  const [showTranslation, setShowTranslationState] = useState(false);
+  const [translations, setTranslationsState] = useState<TranslationMode>("off");
   const [playbackRate, setPlaybackRateState] = useState(1);
 
   // Restore persisted preferences on mount.
@@ -58,7 +62,9 @@ export function ReaderSettingsProvider({
       if (!raw) return;
       const p = JSON.parse(raw) as Persisted;
       if (typeof p.arabicScale === "number") setArabicScale(clampScale(p.arabicScale));
-      if (typeof p.showTranslation === "boolean") setShowTranslationState(p.showTranslation);
+      if (p.translations) setTranslationsState(p.translations);
+      else if (typeof p.showTranslation === "boolean")
+        setTranslationsState(p.showTranslation ? "both" : "off"); // migrate legacy
       if (typeof p.playbackRate === "number") setPlaybackRateState(p.playbackRate);
     } catch {
       // ignore malformed storage
@@ -68,9 +74,9 @@ export function ReaderSettingsProvider({
   // Persist whenever anything changes.
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const payload: Persisted = { arabicScale, showTranslation, playbackRate };
+    const payload: Persisted = { arabicScale, translations, playbackRate };
     window.localStorage.setItem(KEY, JSON.stringify(payload));
-  }, [arabicScale, showTranslation, playbackRate]);
+  }, [arabicScale, translations, playbackRate]);
 
   // Expose the Arabic scale as a CSS variable so `.quran-verse` text resizes
   // everywhere without threading the value through every component.
@@ -86,8 +92,8 @@ export function ReaderSettingsProvider({
     () => setArabicScale((s) => clampScale(s - SCALE_STEP)),
     [],
   );
-  const setShowTranslation = useCallback(
-    (b: boolean) => setShowTranslationState(b),
+  const setTranslations = useCallback(
+    (m: TranslationMode) => setTranslationsState(m),
     [],
   );
   const setPlaybackRate = useCallback((n: number) => setPlaybackRateState(n), []);
@@ -97,8 +103,8 @@ export function ReaderSettingsProvider({
       arabicScale,
       incScale,
       decScale,
-      showTranslation,
-      setShowTranslation,
+      translations,
+      setTranslations,
       playbackRate,
       setPlaybackRate,
     }),
@@ -106,8 +112,8 @@ export function ReaderSettingsProvider({
       arabicScale,
       incScale,
       decScale,
-      showTranslation,
-      setShowTranslation,
+      translations,
+      setTranslations,
       playbackRate,
       setPlaybackRate,
     ],

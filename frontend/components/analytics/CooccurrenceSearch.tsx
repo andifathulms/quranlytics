@@ -134,7 +134,10 @@ export function CooccurrenceSearch() {
               description="No verse contains both words. Try lemma (dictionary) forms of each."
             />
           ) : (
-            <VerseList verses={result.verses} />
+            <VerseList
+              verses={result.verses}
+              highlight={[result.word1, result.word2]}
+            />
           )}
         </div>
       )}
