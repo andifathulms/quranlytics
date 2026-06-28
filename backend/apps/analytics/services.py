@@ -289,29 +289,48 @@ def get_all_surah_stats() -> list[dict[str, Any]]:
     ]
 
 
-def find_rare_words(max_count: int = 1, limit: int = 300) -> list[dict[str, Any]]:
+def _rare_words_qs(max_count: int):
+    """Base queryset of rare lemmas (<= max_count occurrences), rarest first."""
+    return (
+        WordFrequency.objects.filter(root__isnull=True, total_count__lte=max_count)
+        .exclude(lemma="")
+        .order_by("total_count", "lemma")
+    )
+
+
+def count_rare_words(max_count: int = 1) -> int:
+    """Total number of lemmas appearing <= max_count times (for pagination)."""
+    return _rare_words_qs(max_count).count()
+
+
+def find_rare_words(
+    max_count: int = 1, limit: int = 300, offset: int = 0
+) -> list[dict[str, Any]]:
     """Words (lemmas) appearing <= max_count times in the entire Quran.
 
-    ``max_count=1`` yields hapax legomena. Capped at ``limit`` rows and resolved
-    in two queries (one representative verse per lemma).
+    ``max_count=1`` yields hapax legomena. Returns a ``limit``-sized page from
+    ``offset``, each with one representative verse and its English gloss,
+    resolved in two queries.
     """
-    rows = list(
-        WordFrequency.objects.filter(
-            root__isnull=True, total_count__lte=max_count
-        )
-        .exclude(lemma="")
-        .order_by("total_count", "lemma")[:limit]
-    )
+    rows = list(_rare_words_qs(max_count)[offset : offset + limit])
     lemmas = [r.lemma for r in rows]
     samples: dict[str, str] = {}
+    glosses: dict[str, str] = {}
     for w in (
         Word.objects.filter(lemma__in=lemmas)
         .select_related("verse__surah")
         .order_by("lemma", "verse__surah__number", "verse__number")
     ):
-        samples.setdefault(w.lemma, w.verse.key)
+        if w.lemma not in samples:
+            samples[w.lemma] = w.verse.key
+            glosses[w.lemma] = w.translation_en
     return [
-        {"lemma": r.lemma, "count": r.total_count, "verse_key": samples.get(r.lemma)}
+        {
+            "lemma": r.lemma,
+            "count": r.total_count,
+            "verse_key": samples.get(r.lemma),
+            "gloss": glosses.get(r.lemma) or "",
+        }
         for r in rows
     ]
 

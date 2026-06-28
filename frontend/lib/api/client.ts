@@ -13,7 +13,7 @@ import type {
   PhraseSearch,
   ProphetDetail,
   Prophets,
-  RareWord,
+  RareWords,
   RepeatedVerses,
   RootTree,
   SemanticResult,
@@ -134,9 +134,9 @@ export const api = {
   allSurahStats: () =>
     request<{ surahs: SurahStatRow[] }>(`/analytics/surah-stats/`),
 
-  rareWords: (threshold = 1) =>
-    request<{ words: RareWord[] }>(
-      `/analytics/rare-words/?threshold=${threshold}`,
+  rareWords: (threshold = 1, page = 1) =>
+    request<RareWords>(
+      `/analytics/rare-words/?threshold=${threshold}&page=${page}`,
     ),
 
   verseLengths: (surahId: number) =>
