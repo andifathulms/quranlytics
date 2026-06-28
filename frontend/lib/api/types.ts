@@ -379,6 +379,14 @@ export interface RareWord {
   lemma: string;
   count: number;
   verse_key: string | null;
+  gloss?: string;
+}
+
+export interface RareWords {
+  words: RareWord[];
+  total: number;
+  page: number;
+  page_size: number;
 }
 
 export interface VerseLength {

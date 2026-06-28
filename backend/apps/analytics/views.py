@@ -149,20 +149,32 @@ def chiastic_view(request):
     )
 
 
+RARE_WORDS_PAGE_SIZE = 60
+
+
 @api_view(["GET"])
 def rare_words_view(request):
     try:
         threshold = int(request.query_params.get("threshold", 1))
+        page = max(1, int(request.query_params.get("page", 1)))
     except ValueError:
         return envelope(
-            errors=[{"message": "'threshold' must be an integer."}],
+            errors=[{"message": "'threshold' and 'page' must be integers."}],
             status=status.HTTP_400_BAD_REQUEST,
         )
-    return _cached(
-        "rare-words",
-        {"threshold": threshold},
-        lambda: {"words": services.find_rare_words(max_count=threshold)},
-    )
+    offset = (page - 1) * RARE_WORDS_PAGE_SIZE
+
+    def compute():
+        return {
+            "words": services.find_rare_words(
+                max_count=threshold, limit=RARE_WORDS_PAGE_SIZE, offset=offset
+            ),
+            "total": services.count_rare_words(max_count=threshold),
+            "page": page,
+            "page_size": RARE_WORDS_PAGE_SIZE,
+        }
+
+    return _cached("rare-words", {"threshold": threshold, "page": page}, compute)
 
 
 @api_view(["GET"])
