@@ -316,20 +316,38 @@ def find_rare_words(
     lemmas = [r.lemma for r in rows]
     samples: dict[str, str] = {}
     glosses: dict[str, str] = {}
+    root_disp: dict[str, str] = {}
+    root_key: dict[str, str] = {}
+    root_id_by_lemma: dict[str, int] = {}
     for w in (
         Word.objects.filter(lemma__in=lemmas)
-        .select_related("verse__surah")
+        .select_related("verse__surah", "root")
         .order_by("lemma", "verse__surah__number", "verse__number")
     ):
         if w.lemma not in samples:
             samples[w.lemma] = w.verse.key
             glosses[w.lemma] = w.translation_en
+            if w.root_id:
+                root_disp[w.lemma] = w.root.display
+                root_key[w.lemma] = w.root.root_arabic
+                root_id_by_lemma[w.lemma] = w.root_id
+    # One query for the total occurrences of every root involved, so each card
+    # can show whether a rare form belongs to a common or a genuinely rare root.
+    root_total = {
+        wf.root_id: wf.total_count
+        for wf in WordFrequency.objects.filter(
+            root_id__in=set(root_id_by_lemma.values())
+        )
+    }
     return [
         {
             "lemma": r.lemma,
             "count": r.total_count,
             "verse_key": samples.get(r.lemma),
             "gloss": glosses.get(r.lemma) or "",
+            "root": root_disp.get(r.lemma, ""),
+            "root_key": root_key.get(r.lemma, ""),
+            "root_count": root_total.get(root_id_by_lemma.get(r.lemma, -1)),
         }
         for r in rows
     ]
