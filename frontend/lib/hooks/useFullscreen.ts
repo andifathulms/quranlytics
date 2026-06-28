@@ -16,11 +16,18 @@ type FsDocument = Document & {
 export function useFullscreen() {
   const ref = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(false);
-  const supported =
-    typeof document !== "undefined" &&
-    (typeof document.documentElement.requestFullscreen === "function" ||
-      typeof (document.documentElement as FsElement).webkitRequestFullscreen ===
-        "function");
+  // Computed after mount so the server and the client's first render agree
+  // (both render nothing) — otherwise the Fullscreen button is a hydration
+  // mismatch (absent on the server, present on the client).
+  const [supported, setSupported] = useState(false);
+
+  useEffect(() => {
+    setSupported(
+      typeof document.documentElement.requestFullscreen === "function" ||
+        typeof (document.documentElement as FsElement).webkitRequestFullscreen ===
+          "function",
+    );
+  }, []);
 
   useEffect(() => {
     const doc = document as FsDocument;
