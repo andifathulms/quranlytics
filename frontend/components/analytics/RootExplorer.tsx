@@ -74,19 +74,33 @@ export function RootExplorer({ initialRoot = "" }: { initialRoot?: string }) {
 
       {tree && (
         <div className="space-y-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <ArabicText className="text-3xl text-khatulistiwa">
-              {tree.root}
-            </ArabicText>
-            {tree.meaning && <span className="text-muted">{tree.meaning}</span>}
-            <Badge tone="emerald">{tree.derivatives.length} forms</Badge>
-            {tree.derivatives.length > 0 && (
-              <ShareDiscoveryButton
-                title={`Root ${tree.root} (${tree.root_transliteration ?? ""}) yields ${tree.derivatives.length} forms`}
-                body={`The root ${tree.root}${tree.meaning ? ` — "${tree.meaning}"` : ""} appears in ${tree.derivatives.length} derived word-forms across the Quran.`}
-                category="Linguistic"
-                payload={{ root: tree.root, forms: tree.derivatives.length }}
-              />
+          <div>
+            <div className="flex flex-wrap items-center gap-3">
+              <ArabicText className="text-3xl text-khatulistiwa">
+                {tree.root}
+              </ArabicText>
+              {tree.root_transliteration && (
+                <span className="font-mono text-sm text-muted">
+                  {tree.root_transliteration}
+                </span>
+              )}
+              <Badge tone="emerald">{tree.derivatives.length} forms</Badge>
+              {tree.derivatives.length > 0 && (
+                <ShareDiscoveryButton
+                  title={`Root ${tree.root} (${tree.root_transliteration ?? ""}) yields ${tree.derivatives.length} forms`}
+                  body={`The root ${tree.root}${tree.meaning ? ` — "${tree.meaning}"` : ""} appears in ${tree.derivatives.length} derived word-forms across the Quran.`}
+                  category="Linguistic"
+                  payload={{ root: tree.root, forms: tree.derivatives.length }}
+                />
+              )}
+            </div>
+            {tree.meaning && (
+              <div className="mt-2 rounded-lg border border-sand bg-surface-2 px-4 py-3 dark:border-khatulistiwa/30">
+                <p className="text-sm leading-relaxed text-fg">{tree.meaning}</p>
+                <p className="mt-1 text-xs text-muted">
+                  Lexical sense — Lane&apos;s Lexicon (public domain)
+                </p>
+              </div>
             )}
           </div>
 

@@ -80,7 +80,8 @@ class WordRoot(models.Model):
     # Raw root in proper orthography (hamza preserved) — for display only.
     root_display = models.CharField(max_length=20, blank=True)
     root_transliteration = models.CharField(max_length=50)
-    meaning_en = models.CharField(max_length=200, blank=True)
+    # Full lexicon entry (Lane's Lexicon, public domain) — can be long.
+    meaning_en = models.TextField(blank=True)
     meaning_id = models.CharField(max_length=200, blank=True)
 
     class Meta:
