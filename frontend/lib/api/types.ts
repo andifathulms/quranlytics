@@ -250,7 +250,10 @@ export interface TajwidVerse {
 export interface TajwidLegendItem {
   id: string;
   label_en: string;
+  label_ar: string;
+  label_id: string;
   color: string;
+  color_dark: string;
 }
 
 export interface SurahTajwid {

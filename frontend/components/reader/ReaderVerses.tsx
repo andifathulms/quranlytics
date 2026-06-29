@@ -2,12 +2,14 @@
 
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 
+import { ArabicText } from "@/components/ui/ArabicText";
 import { api } from "@/lib/api/client";
 import type { SurahTajwid, TajwidSegment, Verse } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { RECITERS } from "@/lib/audio";
 import { useFullscreen } from "@/lib/hooks/useFullscreen";
 import { usePersistentToggle } from "@/lib/hooks/usePersistentToggle";
+import { useTheme } from "@/lib/theme/ThemeContext";
 import { useToast } from "@/lib/toast/ToastContext";
 
 import { ReaderAudioProvider, useReaderAudio } from "./ReaderAudio";
@@ -132,11 +134,13 @@ export function ReaderVerses({
     return map;
   }, [data]);
 
+  const { night } = useTheme();
   const ruleColors = useMemo(() => {
     const map: Record<string, string> = {};
-    for (const r of data?.legend ?? []) map[r.id] = r.color;
+    for (const r of data?.legend ?? [])
+      map[r.id] = night ? r.color_dark : r.color;
     return map;
-  }, [data]);
+  }, [data, night]);
 
   const active = on && Boolean(data);
 
@@ -230,14 +234,22 @@ export function ReaderVerses({
 
       {!reading && active && (
         <div className="mb-4 space-y-2">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs">
             {data!.legend.map((r) => (
-              <span key={r.id} className="inline-flex items-center gap-1">
+              <span key={r.id} className="inline-flex items-center gap-1.5">
                 <span
                   className="inline-block h-2.5 w-2.5 rounded-full"
-                  style={{ backgroundColor: r.color }}
+                  style={{ backgroundColor: night ? r.color_dark : r.color }}
                 />
-                <span className="text-muted">{r.label_en}</span>
+                <span
+                  className="font-semibold"
+                  style={{ color: night ? r.color_dark : r.color }}
+                >
+                  {r.label_en}
+                </span>
+                <ArabicText className="text-sm text-muted">
+                  {r.label_ar}
+                </ArabicText>
               </span>
             ))}
           </div>
