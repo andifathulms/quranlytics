@@ -181,13 +181,64 @@ def annotate(text: str) -> list[dict[str, Any]]:
     return segments
 
 
-# Rule metadata for the UI legend (id → label + colour hint).
+# Rule metadata for the UI legend. Each rule carries a colour for light themes
+# (parchment / sepia) and a brighter ``color_dark`` for the night theme, so the
+# coloured Arabic stays legible on every background. Labels in en/ar/id.
 RULES_LEGEND = [
-    {"id": "ghunnah", "label_en": "Ghunnah (nasalisation)", "color": "#0d9488"},
-    {"id": "idgham", "label_en": "Idghām (merging)", "color": "#7c3aed"},
-    {"id": "ikhfa", "label_en": "Ikhfāʾ (concealment)", "color": "#2563eb"},
-    {"id": "iqlab", "label_en": "Iqlāb (conversion)", "color": "#db2777"},
-    {"id": "idhar", "label_en": "Idhār (clear)", "color": "#475569"},
-    {"id": "qalqalah", "label_en": "Qalqalah (echo)", "color": "#dc2626"},
-    {"id": "madd", "label_en": "Madd (elongation)", "color": "#d97706"},
+    {
+        "id": "ghunnah",
+        "label_en": "Ghunnah (nasalisation)",
+        "label_ar": "غُنَّة",
+        "label_id": "Gunnah (dengung)",
+        "color": "#0f766e",
+        "color_dark": "#2dd4bf",
+    },
+    {
+        "id": "idgham",
+        "label_en": "Idghām (merging)",
+        "label_ar": "إِدْغَام",
+        "label_id": "Idgam (lebur)",
+        "color": "#6d28d9",
+        "color_dark": "#a78bfa",
+    },
+    {
+        "id": "ikhfa",
+        "label_en": "Ikhfāʾ (concealment)",
+        "label_ar": "إِخْفَاء",
+        "label_id": "Ikhfa (samar)",
+        "color": "#1d4ed8",
+        "color_dark": "#60a5fa",
+    },
+    {
+        "id": "iqlab",
+        "label_en": "Iqlāb (conversion)",
+        "label_ar": "إِقْلَاب",
+        "label_id": "Iqlab (ganti)",
+        "color": "#be185d",
+        "color_dark": "#f472b6",
+    },
+    {
+        "id": "idhar",
+        "label_en": "Idhār (clear)",
+        "label_ar": "إِظْهَار",
+        "label_id": "Izhar (jelas)",
+        "color": "#475569",
+        "color_dark": "#94a3b8",
+    },
+    {
+        "id": "qalqalah",
+        "label_en": "Qalqalah (echo)",
+        "label_ar": "قَلْقَلَة",
+        "label_id": "Qalqalah (pantul)",
+        "color": "#b91c1c",
+        "color_dark": "#f87171",
+    },
+    {
+        "id": "madd",
+        "label_en": "Madd (elongation)",
+        "label_ar": "مَدّ",
+        "label_id": "Mad (panjang)",
+        "color": "#b45309",
+        "color_dark": "#fbbf24",
+    },
 ]
