@@ -53,3 +53,7 @@ docker-compose.override.yml
 # Data dumps / ingestion caches
 /backend/scripts/ingest/.cache/
 *.dump
+
+# Local exports
+/exports/
+/backend/celerybeat-schedule

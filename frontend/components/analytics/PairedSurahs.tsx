@@ -6,6 +6,7 @@ import { ArabicText } from "@/components/ui/ArabicText";
 import { Badge, Card } from "@/components/ui/Card";
 import { api } from "@/lib/api/client";
 import type { Surah, SurahBrief, SurahPair, Verse } from "@/lib/api/types";
+import type { SurahOrder } from "@/lib/surahOrder";
 
 import { SurahSelect } from "./SurahSelect";
 
@@ -110,7 +111,13 @@ function SurahCard({ s }: { s: SurahBrief }) {
   );
 }
 
-export function PairedSurahs({ surahs }: { surahs: Surah[] }) {
+export function PairedSurahs({
+  surahs,
+  order = "mushaf",
+}: {
+  surahs: Surah[];
+  order?: SurahOrder;
+}) {
   const [a, setA] = useState(113);
   const [b, setB] = useState(114);
   const [pair, setPair] = useState<SurahPair | null>(null);
@@ -131,8 +138,8 @@ export function PairedSurahs({ surahs }: { surahs: Surah[] }) {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-4">
-        <SurahSelect surahs={surahs} value={a} onChange={setA} label="Surah A" />
-        <SurahSelect surahs={surahs} value={b} onChange={setB} label="Surah B" />
+        <SurahSelect surahs={surahs} value={a} onChange={setA} label="Surah A" order={order} />
+        <SurahSelect surahs={surahs} value={b} onChange={setB} label="Surah B" order={order} />
       </div>
 
       <div className="flex flex-wrap items-center gap-2">

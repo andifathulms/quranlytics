@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/Card";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { api } from "@/lib/api/client";
 import type { Surah, VerseLengths } from "@/lib/api/types";
+import type { SurahOrder } from "@/lib/surahOrder";
 
 import { SurahSelect } from "./SurahSelect";
 
@@ -18,7 +19,13 @@ const METRICS: { key: Metric; label: string; unit: string }[] = [
 
 // Verse-length / rhythm visualizer: a column per verse (height = chosen metric),
 // an average reference line, plus a long/short rhythm strip relative to average.
-export function VerseRhythm({ surahs }: { surahs: Surah[] }) {
+export function VerseRhythm({
+  surahs,
+  order = "mushaf",
+}: {
+  surahs: Surah[];
+  order?: SurahOrder;
+}) {
   const [surah, setSurah] = useState(1);
   const [metric, setMetric] = useState<Metric>("word_count");
   const [data, setData] = useState<VerseLengths | null>(null);
@@ -50,7 +57,13 @@ export function VerseRhythm({ surahs }: { surahs: Surah[] }) {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-4">
-        <SurahSelect surahs={surahs} value={surah} onChange={setSurah} label="Surah" />
+        <SurahSelect
+          surahs={surahs}
+          value={surah}
+          onChange={setSurah}
+          label="Surah"
+          order={order}
+        />
         <div className="flex gap-1">
           {METRICS.map((m) => (
             <button

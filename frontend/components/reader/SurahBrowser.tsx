@@ -9,24 +9,30 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Input } from "@/components/ui/Input";
 import type { Surah } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/AuthContext";
+import { sortSurahs, type SurahOrder } from "@/lib/surahOrder";
+
+import { OrderToggle } from "./OrderToggle";
 
 // Surah index with a quick filter by number, transliteration, or English name.
 export function SurahBrowser({ surahs }: { surahs: Surah[] }) {
   const [query, setQuery] = useState("");
+  const [order, setOrder] = useState<SurahOrder>("mushaf");
   const { progress } = useAuth();
   const furthestOf = (n: number) => progress?.progress?.[String(n)] ?? 0;
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return surahs;
-    return surahs.filter(
-      (s) =>
-        String(s.number) === q ||
-        s.name_transliteration.toLowerCase().includes(q) ||
-        s.name_en.toLowerCase().includes(q) ||
-        s.name_arabic.includes(query.trim()),
-    );
-  }, [surahs, query]);
+    const matches = !q
+      ? surahs
+      : surahs.filter(
+          (s) =>
+            String(s.number) === q ||
+            s.name_transliteration.toLowerCase().includes(q) ||
+            s.name_en.toLowerCase().includes(q) ||
+            s.name_arabic.includes(query.trim()),
+        );
+    return sortSurahs(matches, order);
+  }, [surahs, query, order]);
 
   return (
     <section className="space-y-4">
@@ -53,14 +59,17 @@ export function SurahBrowser({ surahs }: { surahs: Surah[] }) {
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="font-display text-2xl">Surahs</h2>
-        <Input
-          type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Jump to a surah…"
-          aria-label="Filter surahs"
-          className="w-full sm:w-64"
-        />
+        <div className="flex flex-wrap items-center gap-3">
+          <OrderToggle value={order} onChange={setOrder} />
+          <Input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Jump to a surah…"
+            aria-label="Filter surahs"
+            className="w-full sm:w-64"
+          />
+        </div>
       </div>
 
       {filtered.length === 0 ? (
@@ -98,6 +107,17 @@ export function SurahBrowser({ surahs }: { surahs: Surah[] }) {
                       </div>
                       <div className="text-sm text-muted">
                         {s.name_en} · {s.verse_count} verses
+                        {order === "revelation" && (
+                          <>
+                            {" · "}
+                            <span
+                              className="text-gold"
+                              title="Order of revelation"
+                            >
+                              #{s.revelation_order} revealed
+                            </span>
+                          </>
+                        )}
                       </div>
                       <Badge
                         tone={s.revelation_type === "Meccan" ? "gold" : "blue"}
