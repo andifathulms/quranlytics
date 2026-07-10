@@ -7,6 +7,7 @@ import type {
   DivineNames,
   Envelope,
   LemmaLinks,
+  MorphologyProfile,
   NumericClaim,
   NumericClaimDetail,
   NumericClaims,
@@ -150,6 +151,11 @@ export const api = {
     request<{ structures: ChiasticStructure[] }>(`/analytics/chiastic/`),
 
   sajdahVerses: () => request<SajdahVerses>(`/analytics/sajdah/`),
+
+  morphologyProfile: (surah?: number) =>
+    request<MorphologyProfile>(
+      `/analytics/morphology/${surah ? `?surah=${surah}` : ""}`,
+    ),
 
   // ── Semantic (Phase 4) ──────────────────────────────
   semanticSearch: (query: string, limit = 20) =>

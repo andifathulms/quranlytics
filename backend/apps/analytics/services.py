@@ -980,3 +980,46 @@ def get_sajdah_verses() -> dict[str, Any]:
 
     serialized = VerseSerializer(verses, many=True).data
     return {"count": len(serialized), "verses": serialized}
+
+
+def _segment_distribution(qs, field: str, limit: int | None = None) -> list[dict[str, Any]]:
+    """Count non-blank values of ``field`` over a WordSegment queryset."""
+    from django.db.models import Count
+
+    rows = (
+        qs.exclude(**{field: ""})
+        .values(field)
+        .annotate(n=Count("id"))
+        .order_by("-n")
+    )
+    if limit:
+        rows = rows[:limit]
+    return [{"key": r[field], "count": r["n"]} for r in rows]
+
+
+def get_morphology_profile(surah_id: int | None = None) -> dict[str, Any]:
+    """Grammatical-morphology overview from the segment layer.
+
+    Aggregates the ``WordSegment`` table (one row per prefix/stem/suffix) into
+    distributions the single word-level POS tag cannot express: coarse word
+    class, POS subclass, and — for verbs — derived form (I–X), mood, and voice.
+    Optionally scoped to one surah. Read-only aggregation, cached upstream.
+    """
+    from apps.quran.models import WordSegment
+
+    qs = WordSegment.objects.all()
+    if surah_id:
+        qs = qs.filter(word__verse__surah__number=surah_id)
+
+    verbs = qs.filter(pos_tag="V")
+    return {
+        "surah_id": surah_id,
+        "total_segments": qs.count(),
+        "verb_total": verbs.count(),
+        # N / V / P — noun, verb, particle.
+        "coarse_pos": _segment_distribution(qs, "pos_tag"),
+        "pos_detail": _segment_distribution(qs, "pos_detail", limit=20),
+        "verb_forms": _segment_distribution(verbs, "verb_form"),
+        "moods": _segment_distribution(verbs, "mood"),
+        "voice": _segment_distribution(verbs, "voice"),
+    }

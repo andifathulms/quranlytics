@@ -143,6 +143,55 @@ class Word(models.Model):
         return f"{self.arabic} @ {self.verse}:{self.position}"
 
 
+class WordSegment(models.Model):
+    """One morphological segment of a Word: a prefix, the stem, or a suffix.
+
+    Sourced from the Quranic Arabic Corpus morphology export. A word splits into
+    one or more segments (proclitics, stem, enclitics); the grammatical features
+    — POS subclass, verb form, mood, voice — live at this granularity, which the
+    single ``Word.morphology_tag`` cannot express. ``features`` preserves the raw
+    pipe-delimited feature string so no source detail is lost.
+    """
+
+    SEGMENT_TYPES = [("prefix", "prefix"), ("stem", "stem"), ("suffix", "suffix")]
+
+    word = models.ForeignKey(
+        Word, on_delete=models.CASCADE, related_name="segments"
+    )
+    position = models.IntegerField()  # 1-indexed segment position within the word
+    arabic = models.CharField(max_length=100)  # exact sourced segment form
+    segment_type = models.CharField(max_length=6, choices=SEGMENT_TYPES)
+    pos_tag = models.CharField(max_length=4, blank=True)  # coarse: N / V / P
+    # Refined word-class, e.g. PRON, CONJ, DET, PERF, IMPF, IMPV, ACT_PCPL,
+    # PASS_PCPL, REL, ADJ, VN — empty when the segment is a plain noun.
+    pos_detail = models.CharField(max_length=16, blank=True)
+    lemma = models.CharField(max_length=100, blank=True)
+    root = models.ForeignKey(
+        WordRoot,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="segments",
+    )
+    verb_form = models.CharField(max_length=4, blank=True)  # I..X (roman)
+    mood = models.CharField(max_length=8, blank=True)  # IND / SUBJ / JUS
+    voice = models.CharField(max_length=4, blank=True)  # ACT / PASS (verbs only)
+    features = models.CharField(max_length=200, blank=True)  # raw feature string
+
+    class Meta:
+        unique_together = ("word", "position")
+        ordering = ["word", "position"]
+        indexes = [
+            models.Index(fields=["pos_detail"]),
+            models.Index(fields=["verb_form"]),
+            models.Index(fields=["mood"]),
+            models.Index(fields=["voice"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.arabic} [{self.segment_type}] @ word {self.word_id}:{self.position}"
+
+
 class SurahStats(models.Model):
     """Materialised per-surah statistics — populated via Celery task."""
 

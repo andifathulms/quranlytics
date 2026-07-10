@@ -18,9 +18,9 @@ export default function AnalyzeHubPage() {
       <header>
         <h1 className="font-display text-3xl">Analyze</h1>
         <p className="mt-2 max-w-2xl text-muted">
-          Six tools for going beneath the surface of the text — counting words,
-          tracing roots, and surfacing numerical and structural patterns. Every
-          result is computed from the real corpus.
+          Tools for going beneath the surface of the text — counting words,
+          tracing roots, dissecting grammar, and surfacing numerical and
+          structural patterns. Every result is computed from the real corpus.
         </p>
       </header>
 

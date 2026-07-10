@@ -72,6 +72,11 @@ export const NAV_GROUPS: NavGroup[] = [
         description: "Verse rhythm, paired surahs, and ring structures.",
       },
       {
+        href: "/analyze/morphology",
+        label: "Morphology",
+        description: "Grammatical make-up — word class, verb form, mood, voice.",
+      },
+      {
         href: "/analyze/stats",
         label: "Statistics",
         description: "Per-surah word, letter, and unique-form counts.",

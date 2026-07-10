@@ -34,4 +34,5 @@ urlpatterns = [
     path("surah-pair/", views.surah_pair_view, name="surah-pair"),
     path("chiastic/", views.chiastic_view, name="chiastic"),
     path("sajdah/", views.sajdah_verses_view, name="sajdah-verses"),
+    path("morphology/", views.morphology_profile_view, name="morphology-profile"),
 ]

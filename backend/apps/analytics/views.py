@@ -275,3 +275,22 @@ def verify_claim_view(request):
 @api_view(["GET"])
 def sajdah_verses_view(request):
     return _cached("sajdah-verses", {}, services.get_sajdah_verses)
+
+
+@api_view(["GET"])
+def morphology_profile_view(request):
+    raw = request.query_params.get("surah")
+    surah_id = None
+    if raw:
+        try:
+            surah_id = int(raw)
+        except ValueError:
+            return envelope(
+                errors=[{"message": "'surah' must be an integer."}],
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+    return _cached(
+        "morphology-profile",
+        {"surah": surah_id or 0},
+        lambda: services.get_morphology_profile(surah_id),
+    )

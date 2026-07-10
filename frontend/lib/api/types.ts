@@ -82,6 +82,22 @@ export interface SajdahVerses {
   verses: Verse[];
 }
 
+export interface MorphCount {
+  key: string;
+  count: number;
+}
+
+export interface MorphologyProfile {
+  surah_id: number | null;
+  total_segments: number;
+  verb_total: number;
+  coarse_pos: MorphCount[];
+  pos_detail: MorphCount[];
+  verb_forms: MorphCount[];
+  moods: MorphCount[];
+  voice: MorphCount[];
+}
+
 export interface WordFrequency {
   query: string;
   total: number;
