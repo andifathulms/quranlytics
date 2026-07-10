@@ -75,6 +75,11 @@ class VerseSerializer(serializers.ModelSerializer):
             "text_uthmani",
             "juz_number",
             "page_number",
+            "hizb_number",
+            "rub_el_hizb_number",
+            "ruku_number",
+            "manzil_number",
+            "sajdah_number",
             "revelation_order",
             "translations",
         )

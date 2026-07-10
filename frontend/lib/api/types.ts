@@ -67,9 +67,19 @@ export interface Verse {
   text_uthmani: string;
   juz_number: number;
   page_number: number;
+  hizb_number: number;
+  rub_el_hizb_number: number;
+  ruku_number: number;
+  manzil_number: number;
+  sajdah_number: number | null;
   revelation_order: number;
   translations: Translation[];
   words?: Word[];
+}
+
+export interface SajdahVerses {
+  count: number;
+  verses: Verse[];
 }
 
 export interface WordFrequency {

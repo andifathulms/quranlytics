@@ -8,12 +8,14 @@ import { sortSurahs, type SurahOrder } from "@/lib/surahOrder";
 
 import { ChiasticView } from "./ChiasticView";
 import { PairedSurahs } from "./PairedSurahs";
+import { SajdahView } from "./SajdahView";
 import { VerseRhythm } from "./VerseRhythm";
 
 const TABS = [
   { key: "rhythm", label: "Verse Rhythm" },
   { key: "paired", label: "Paired Surahs" },
   { key: "chiastic", label: "Chiastic Structure" },
+  { key: "sajdah", label: "Prostrations" },
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];
@@ -42,8 +44,8 @@ export function StructureTabs({ surahs }: { surahs: Surah[] }) {
             </button>
           ))}
         </div>
-        {/* Chiastic view has no surah selector, so the order toggle is moot there. */}
-        {tab !== "chiastic" && (
+        {/* Only the surah-selector tabs are affected by ordering. */}
+        {(tab === "rhythm" || tab === "paired") && (
           <div className="pb-2">
             <OrderToggle value={order} onChange={setOrder} />
           </div>
@@ -53,6 +55,7 @@ export function StructureTabs({ surahs }: { surahs: Surah[] }) {
       {tab === "rhythm" && <VerseRhythm surahs={ordered} order={order} />}
       {tab === "paired" && <PairedSurahs surahs={ordered} order={order} />}
       {tab === "chiastic" && <ChiasticView />}
+      {tab === "sajdah" && <SajdahView />}
     </div>
   );
 }

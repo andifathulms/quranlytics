@@ -959,3 +959,24 @@ def verify_numeric_claim(word: str, expected_count: int) -> dict[str, Any]:
         "verified": actual == expected_count,
         "verses": [f"{s}:{n}" for s, n in verse_keys],
     }
+
+
+def get_sajdah_verses() -> dict[str, Any]:
+    """The verses of prostration (sujud at-tilawa).
+
+    Reads the ``sajdah_number`` marker ingested from quran.com — set only on
+    the prostration verses, null everywhere else — and returns each in Mushaf
+    order with its ordinal, full Uthmani text, and translations. The count is
+    whatever the source marks (traditionally 15); we surface the data and let
+    the reader conclude rather than asserting a number.
+    """
+    verses = (
+        Verse.objects.filter(sajdah_number__isnull=False)
+        .select_related("surah")
+        .prefetch_related("translations")
+        .order_by("sajdah_number")
+    )
+    from apps.quran.serializers import VerseSerializer
+
+    serialized = VerseSerializer(verses, many=True).data
+    return {"count": len(serialized), "verses": serialized}

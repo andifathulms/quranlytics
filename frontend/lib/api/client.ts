@@ -16,6 +16,7 @@ import type {
   RareResult,
   RepeatedVerses,
   RootTree,
+  SajdahVerses,
   SemanticResult,
   Surah,
   SurahPair,
@@ -147,6 +148,8 @@ export const api = {
 
   chiastic: () =>
     request<{ structures: ChiasticStructure[] }>(`/analytics/chiastic/`),
+
+  sajdahVerses: () => request<SajdahVerses>(`/analytics/sajdah/`),
 
   // ── Semantic (Phase 4) ──────────────────────────────
   semanticSearch: (query: string, limit = 20) =>

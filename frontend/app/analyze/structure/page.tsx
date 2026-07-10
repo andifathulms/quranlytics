@@ -22,7 +22,7 @@ export default async function StructurePage() {
     <div className="space-y-6">
       <ToolIntro
         title="Structural Patterns"
-        description="Verse rhythm, paired-surah symmetry, and proposed chiastic (ring) structures."
+        description="Verse rhythm, paired-surah symmetry, proposed chiastic (ring) structures, and the verses of prostration."
       />
       {surahs.length === 0 ? (
         <EmptyState

@@ -270,3 +270,8 @@ def verify_claim_view(request):
         {"word": word, "expected": expected_count},
         lambda: services.verify_numeric_claim(word, expected_count),
     )
+
+
+@api_view(["GET"])
+def sajdah_verses_view(request):
+    return _cached("sajdah-verses", {}, services.get_sajdah_verses)

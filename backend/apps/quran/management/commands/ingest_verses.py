@@ -67,6 +67,13 @@ class Command(BaseCommand):
                     "text_clean": normalize_search(text_uthmani),
                     "juz_number": verse.get("juz_number", 0),
                     "page_number": verse.get("page_number", 0),
+                    # Classical structural subdivisions from the same payload.
+                    # sajdah_number is null on non-prostration verses.
+                    "hizb_number": verse.get("hizb_number", 0) or 0,
+                    "rub_el_hizb_number": verse.get("rub_el_hizb_number", 0) or 0,
+                    "ruku_number": verse.get("ruku_number", 0) or 0,
+                    "manzil_number": verse.get("manzil_number", 0) or 0,
+                    "sajdah_number": verse.get("sajdah_number"),
                     # Global revelation order is approximated by chapter order;
                     # refined later if a chronological dataset is loaded.
                     "revelation_order": surah.revelation_order * 1000

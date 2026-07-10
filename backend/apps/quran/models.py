@@ -38,6 +38,16 @@ class Verse(models.Model):
     text_clean = models.TextField()  # Arabic without tashkeel (search only)
     juz_number = models.IntegerField()
     page_number = models.IntegerField()
+    # Classical structural subdivisions (from quran.com). hizb = half-juz,
+    # rub' = quarter-hizb, ruku' = thematic paragraph, manzil = 1 of 7 reading
+    # portions. Default 0 until re-ingested.
+    hizb_number = models.IntegerField(default=0)
+    rub_el_hizb_number = models.IntegerField(default=0)
+    ruku_number = models.IntegerField(default=0)
+    manzil_number = models.IntegerField(default=0)
+    # Prostration marker: set only on the (traditionally 15) sajdah verses;
+    # null everywhere else.
+    sajdah_number = models.IntegerField(null=True, blank=True)
     revelation_order = models.IntegerField()  # Global chronological order
 
     class Meta:
@@ -46,6 +56,8 @@ class Verse(models.Model):
         indexes = [
             models.Index(fields=["juz_number"]),
             models.Index(fields=["revelation_order"]),
+            models.Index(fields=["ruku_number"]),
+            models.Index(fields=["hizb_number"]),
         ]
 
     @property
