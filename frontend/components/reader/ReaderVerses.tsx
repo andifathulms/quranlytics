@@ -1,6 +1,13 @@
 "use client";
 
-import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Fragment,
+  type FormEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import { ArabicText } from "@/components/ui/ArabicText";
 import { api } from "@/lib/api/client";
@@ -287,24 +294,52 @@ export function ReaderVerses({
         <ReadingFlow verses={visible} />
       ) : (
         <section>
-          {visible.map((v) => (
-            <VerseRow
-              key={v.id}
-              verse={v}
-              tajwid={active ? segmentsByKey[v.verse_key] : undefined}
-              ruleColors={active ? ruleColors : undefined}
-              hidden={memorize && hideText}
-              highlightWord={
-                highlight?.key === `${v.surah_number}-${v.number}`
-                  ? highlight.word
-                  : undefined
-              }
-            />
-          ))}
+          {visible.map((v, i) => {
+            const prev = i > 0 ? visible[i - 1] : null;
+            // A rukūʿ boundary: this verse opens a new thematic paragraph.
+            const newRuku =
+              v.ruku_number > 0 &&
+              prev != null &&
+              v.ruku_number !== prev.ruku_number;
+            return (
+              <Fragment key={v.id}>
+                {newRuku && <RukuDivider n={v.ruku_number} />}
+                <VerseRow
+                  verse={v}
+                  tajwid={active ? segmentsByKey[v.verse_key] : undefined}
+                  ruleColors={active ? ruleColors : undefined}
+                  hidden={memorize && hideText}
+                  highlightWord={
+                    highlight?.key === `${v.surah_number}-${v.number}`
+                      ? highlight.word
+                      : undefined
+                  }
+                />
+              </Fragment>
+            );
+          })}
         </section>
       )}
       </div>
     </ReaderAudioProvider>
+  );
+}
+
+// A subtle rukūʿ (thematic paragraph) boundary marker shown between verses
+// where the rukūʿ number changes. ؏ is the traditional mushaf rukūʿ sign.
+function RukuDivider({ n }: { n: number }) {
+  return (
+    <div
+      className="my-2 flex items-center gap-3"
+      aria-label={`Start of rukūʿ ${n}`}
+    >
+      <span className="h-px flex-1 bg-sand dark:bg-khatulistiwa/30" />
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-waraq/40 bg-waraq/10 px-2.5 py-0.5 text-xs text-[#8a6d1f] dark:text-waraq">
+        <ArabicText className="text-sm">؏</ArabicText>
+        Rukūʿ {n}
+      </span>
+      <span className="h-px flex-1 bg-sand dark:bg-khatulistiwa/30" />
+    </div>
   );
 }
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from rest_framework import serializers
 
-from .models import Surah, Translation, Verse, Word, WordRoot
+from .models import Surah, Translation, Verse, Word, WordRoot, WordSegment
 
 
 class SurahSerializer(serializers.ModelSerializer):
@@ -42,8 +42,25 @@ class WordRootSerializer(serializers.ModelSerializer):
         )
 
 
+class WordSegmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WordSegment
+        fields = (
+            "position",
+            "arabic",
+            "segment_type",
+            "pos_tag",
+            "pos_detail",
+            "lemma",
+            "verb_form",
+            "mood",
+            "voice",
+        )
+
+
 class WordSerializer(serializers.ModelSerializer):
     root = WordRootSerializer(read_only=True)
+    segments = WordSegmentSerializer(many=True, read_only=True)
 
     class Meta:
         model = Word
@@ -57,6 +74,7 @@ class WordSerializer(serializers.ModelSerializer):
             "root",
             "morphology_tag",
             "is_stopword",
+            "segments",
         )
 
 

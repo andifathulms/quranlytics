@@ -7,47 +7,13 @@ import { ErrorBanner } from "@/components/ui/ErrorBanner";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { api, ApiError } from "@/lib/api/client";
 import type { MorphCount, MorphologyProfile, Surah } from "@/lib/api/types";
-
-// Friendly labels for the corpus's terse feature codes.
-const COARSE: Record<string, string> = { N: "Noun", V: "Verb", P: "Particle" };
-const MOOD: Record<string, string> = {
-  IND: "Indicative",
-  SUBJ: "Subjunctive",
-  JUS: "Jussive",
-};
-const VOICE: Record<string, string> = { ACT: "Active", PASS: "Passive" };
-const DETAIL: Record<string, string> = {
-  PRON: "Pronoun",
-  P: "Preposition",
-  CONJ: "Conjunction",
-  REM: "Resumption particle",
-  DET: "Determiner (al-)",
-  PERF: "Perfect verb",
-  IMPF: "Imperfect verb",
-  IMPV: "Imperative verb",
-  PN: "Proper noun",
-  REL: "Relative pronoun",
-  ACT_PCPL: "Active participle",
-  PASS_PCPL: "Passive participle",
-  ADJ: "Adjective",
-  VN: "Verbal noun",
-  NEG: "Negative particle",
-  DEM: "Demonstrative",
-  EMPH: "Emphatic",
-  COND: "Conditional",
-  INTG: "Interrogative",
-  T: "Time adverb",
-  LOC: "Location adverb",
-  VOC: "Vocative",
-  SUB: "Subordinating conjunction",
-  CERT: "Particle of certainty",
-  RES: "Restriction particle",
-  FUT: "Future particle",
-};
-
-function label(map: Record<string, string>, key: string): string {
-  return map[key] ?? key;
-}
+import {
+  labelOf,
+  MOOD_LABEL,
+  POS_COARSE,
+  POS_DETAIL_LABEL,
+  VOICE_LABEL,
+} from "@/lib/morphology";
 
 // One labelled horizontal-bar list, scaled to its own maximum.
 function BarList({
@@ -72,7 +38,7 @@ function BarList({
             <div className="mb-0.5 flex items-baseline justify-between gap-2">
               <span>
                 {prefix}
-                {label(labels, r.key)}
+                {labelOf(labels, r.key)}
               </span>
               <span className="font-mono text-xs text-muted">
                 {r.count.toLocaleString()}
@@ -157,18 +123,18 @@ export function MorphologyExplorer({ surahs }: { surahs: Surah[] }) {
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <BarList title="Word class" rows={data.coarse_pos} labels={COARSE} />
+            <BarList title="Word class" rows={data.coarse_pos} labels={POS_COARSE} />
             <BarList
               title="Verb form (I–X)"
               rows={data.verb_forms}
               prefix="Form "
             />
-            <BarList title="Verb mood" rows={data.moods} labels={MOOD} />
-            <BarList title="Verb voice" rows={data.voice} labels={VOICE} />
+            <BarList title="Verb mood" rows={data.moods} labels={MOOD_LABEL} />
+            <BarList title="Verb voice" rows={data.voice} labels={VOICE_LABEL} />
             <BarList
               title="Grammatical subclass"
               rows={data.pos_detail}
-              labels={DETAIL}
+              labels={POS_DETAIL_LABEL}
             />
           </div>
         </>

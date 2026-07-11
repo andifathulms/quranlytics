@@ -144,6 +144,7 @@ class VerseWordsView(ListAPIView):
         return (
             Word.objects.filter(verse_id=self.kwargs["pk"])
             .select_related("root")
+            .prefetch_related("segments")
             .order_by("position")
         )
 
@@ -159,7 +160,7 @@ class VerseDetailView(RetrieveAPIView):
 
     def get_queryset(self):
         return Verse.objects.select_related("surah").prefetch_related(
-            "translations", "words__root"
+            "translations", "words__root", "words__segments"
         )
 
     def retrieve(self, request, *args, **kwargs):

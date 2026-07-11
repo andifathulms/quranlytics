@@ -47,6 +47,18 @@ export interface WordRoot {
   meaning_id: string;
 }
 
+export interface WordSegment {
+  position: number;
+  arabic: string;
+  segment_type: "prefix" | "stem" | "suffix";
+  pos_tag: string; // N / V / P
+  pos_detail: string;
+  lemma: string;
+  verb_form: string; // I..X
+  mood: string; // IND / SUBJ / JUS
+  voice: string; // ACT / PASS
+}
+
 export interface Word {
   id: number;
   position: number;
@@ -57,6 +69,7 @@ export interface Word {
   root: WordRoot | null;
   morphology_tag: string;
   is_stopword: boolean;
+  segments?: WordSegment[];
 }
 
 export interface Verse {

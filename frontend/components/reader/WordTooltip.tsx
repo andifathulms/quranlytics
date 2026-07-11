@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { ArabicText } from "@/components/ui/ArabicText";
 import { wordAudioUrl } from "@/lib/audio";
 import { useLemmaLinks } from "@/lib/hooks/useLemmaLinks";
+import { describeSegment } from "@/lib/morphology";
 import type { Word } from "@/lib/api/types";
 
 // Morphology detail shown when a reader taps a word: transliteration, meaning,
@@ -89,6 +90,28 @@ export function WordTooltip({
           </div>
         )}
       </dl>
+
+      {/* Segment breakdown: prefixes / stem / suffixes with their grammar,
+          from the corpus segment layer. Only shown once loaded. */}
+      {word.segments && word.segments.length > 0 && (
+        <div className="mt-2 border-t border-sand pt-2 dark:border-khatulistiwa/30">
+          <div className="mb-1 text-xs font-semibold text-muted">Grammar</div>
+          <ul className="space-y-1">
+            {word.segments.map((seg) => (
+              <li
+                key={seg.position}
+                className="flex items-baseline gap-2 text-xs"
+              >
+                <ArabicText className="text-sm text-fg">{seg.arabic}</ArabicText>
+                <span className="text-muted">{describeSegment(seg)}</span>
+                <span className="ml-auto text-[10px] uppercase tracking-wide text-muted/70">
+                  {seg.segment_type}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <div className="mt-3 flex flex-col gap-1">
         {word.lemma && (
           <Link
