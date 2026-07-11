@@ -61,6 +61,20 @@ export function ReaderVerses({
     ? Math.max(...verses.map((v) => v.number))
     : 0;
 
+  // quran.com's ruku_number is a global counter (1–556 across the whole
+  // Quran). Map each distinct value in this surah to a 1-based local ordinal so
+  // the divider reads "Rukūʿ 3" (of this surah), not "Rukūʿ 361".
+  const rukuOrdinal = useMemo(() => {
+    const map: Record<number, number> = {};
+    let ord = 0;
+    for (const v of verses) {
+      if (v.ruku_number > 0 && !(v.ruku_number in map)) {
+        map[v.ruku_number] = ++ord;
+      }
+    }
+    return map;
+  }, [verses]);
+
   // Verse-number lookup: "5" shows ayah 5, "3-9" shows ayahs 3–9. null = all.
   const [range, setRange] = useState<{ from: number; to: number } | null>(null);
   const visible = useMemo(
@@ -303,7 +317,9 @@ export function ReaderVerses({
               v.ruku_number !== prev.ruku_number;
             return (
               <Fragment key={v.id}>
-                {newRuku && <RukuDivider n={v.ruku_number} />}
+                {newRuku && (
+                  <RukuDivider n={rukuOrdinal[v.ruku_number] ?? v.ruku_number} />
+                )}
                 <VerseRow
                   verse={v}
                   tajwid={active ? segmentsByKey[v.verse_key] : undefined}
